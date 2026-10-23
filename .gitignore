@@ -1,0 +1,13 @@
+# 依赖与工具链（仅用于本地构建，不进入版本库）
+node_modules/
+
+# 构建产物
+release/
+packed/
+dist/
+*.zip
+*.exe
+
+# 系统 / 编辑器
+Thumbs.db
+.DS_Store

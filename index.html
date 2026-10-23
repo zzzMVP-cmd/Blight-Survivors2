@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+  <title>Blight Survivors 2</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- 只保留绘制层（画布），界面由 js/menu.js 动态生成 -->
+  <canvas id="game"></canvas>
+
+  <!-- 按依赖顺序引用 js 文件，不要合并 -->
+  <script src="js/heroes.js"></script>
+  <script src="js/menu.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
