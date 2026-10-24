@@ -36,7 +36,6 @@ const Menu = {
       card.className = 'hero-card';
       card.dataset.key = key;
       card.innerHTML =
-        '<div class="hero-img"><img src="' + h.image + '" alt="' + h.name + '"></div>' +
         '<div class="hero-name">' + h.name + '</div>' +
         '<div class="hero-desc">' + h.desc + '</div>' +
         '<div class="hero-weapon"><img src="' + h.weaponIcon + '" alt="武器">' + h.weapon + '</div>';
