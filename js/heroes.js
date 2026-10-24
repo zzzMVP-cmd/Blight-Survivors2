@@ -6,13 +6,13 @@ const HEROES = {
     key: 'warrior',
     name: '战士',
     image: 'assets/images/warrior.png',
-    desc: '均衡近战英雄，生命值高',
+    desc: '均衡近战英雄，生命值高，移速较慢',
     weapon: '裂地斩',
     weaponIcon: 'assets/images/weapon_warrior.png',
     color: '#ffb84d',
     projColor: '#ffd76e',
-    hp: 120,
-    speed: 210
+    hp: 2400.0,
+    speed: 190
   }
 };
 

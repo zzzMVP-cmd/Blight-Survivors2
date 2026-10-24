@@ -62,4 +62,4 @@ Blight Survivors2/
 
 | 英雄 | 头像 | 特点 |
 |------|------|------|
-| 战士 | `assets/images/warrior.png` | 均衡近战英雄，生命值高（120HP） |
+| 战士 | `assets/images/warrior.png` | 均衡近战英雄，生命值高（2400HP），移速较慢|
