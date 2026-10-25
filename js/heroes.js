@@ -12,7 +12,12 @@ const HEROES = {
     color: '#ffb84d',
     projColor: '#ffd76e',
     hp: 2400.0,
-    speed: 190
+    speed: 190,
+    weaponDamage: 25,
+    attackRange: 120,
+    attackInterval: 2,
+    swordLength: 40,
+    swingAngle: Math.PI / 2
   }
 };
 
