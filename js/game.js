@@ -51,6 +51,7 @@ const Game = {
     this.accumulator = 0;
     Weapon.init(this.hero);
     ExpOrbs.clear();
+    DamageNumbers.clear();
     Menu.hide();
     HUD.build();
     HUD.setWeapons(this.player.weapons);
@@ -89,6 +90,7 @@ const Game = {
     Attack.processWarrior(this.player, Weapon, Wave.monsters);
     this.processKills();
     ExpOrbs.update(dt, this.player);
+    DamageNumbers.update(dt);
   },
 
   updatePlayer(dt) {
@@ -157,6 +159,7 @@ const Game = {
 
     Weapon.draw(ctx, this.player);
     ExpOrbs.draw(ctx);
+    DamageNumbers.draw(ctx);
 
     ctx.restore();
 
