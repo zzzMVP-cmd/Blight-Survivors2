@@ -182,3 +182,79 @@ h1 {
 .btn.retreat:hover {
   background:linear-gradient(180deg,#6a6a7a,#4a4a58);
 }
+
+/* 升级强化页 */
+.upgrade-overlay { gap:16px; }
+.upgrade-title {
+  font-size:clamp(22px,4vw,36px);
+  font-weight:700;
+  letter-spacing:4px;
+  color:#ffd76e;
+}
+.refresh-row {
+  display:flex;
+  justify-content:center;
+}
+.btn-refresh {
+  padding:8px 28px;
+  font-size:14px;
+  letter-spacing:2px;
+}
+.btn-refresh:disabled {
+  background:#2c2c38;
+  color:#5a5a6a;
+  box-shadow:none;
+  cursor:not-allowed;
+}
+.card-container {
+  display:flex;
+  flex-wrap:wrap;
+  gap:14px;
+  justify-content:center;
+  max-width:900px;
+  padding:0 20px;
+}
+.upgrade-card {
+  width:150px;
+  min-height:160px;
+  padding:16px 12px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  background:linear-gradient(180deg,#1a1a28,#14141f);
+  border:2px solid #2c2c40;
+  border-radius:12px;
+  cursor:pointer;
+  transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.upgrade-card:hover {
+  transform:translateY(-4px);
+  border-color:#5a5a72;
+  box-shadow:0 0 16px rgba(100,100,140,.3);
+}
+.card-name {
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:1px;
+  text-align:center;
+}
+.card-tier {
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:1px;
+}
+.card-desc {
+  font-size:11px;
+  color:#9a9ab0;
+  text-align:center;
+  line-height:1.5;
+}
+.card-character { border-color:#4a7c59; }
+.card-character:hover { border-color:#5aad6a; box-shadow:0 0 16px rgba(90,173,106,.3); }
+.card-augment { border-color:#5a5a8c; }
+.card-augment:hover { border-color:#7a7abc; box-shadow:0 0 16px rgba(122,122,188,.3); }
+.card-weaponUp { border-color:#8c5a5a; }
+.card-weaponUp:hover { border-color:#bc7a7a; box-shadow:0 0 16px rgba(188,122,122,.3); }
+.card-newWeapon { border-color:#8c7a5a; }
+.card-newWeapon:hover { border-color:#bc9a7a; box-shadow:0 0 16px rgba(188,154,122,.3); }
