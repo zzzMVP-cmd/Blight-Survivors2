@@ -49,6 +49,8 @@ const Game = {
     this.shakeTime = 0;
     this.hitFlashTime = 0;
     this.accumulator = 0;
+    Weapon.init(this.hero);
+    ExpOrbs.clear();
     Menu.hide();
     HUD.build();
     HUD.setWeapons(this.player.weapons);
@@ -83,6 +85,10 @@ const Game = {
 
     this.updatePlayer(dt);
     Wave.update(dt);
+    Weapon.update(dt, this.player, Wave.monsters);
+    Attack.processWarrior(this.player, Weapon, Wave.monsters);
+    this.processKills();
+    ExpOrbs.update(dt, this.player);
   },
 
   updatePlayer(dt) {
@@ -97,6 +103,16 @@ const Game = {
       this.player.x += (dx / len) * this.player.speed * dt;
       this.player.y += (dy / len) * this.player.speed * dt;
     }
+
+    Weapon.setMoveAngle(dx, dy);
+  },
+
+  processKills() {
+    const dead = Wave.monsters.filter(m => m.hp <= 0);
+    for (const m of dead) {
+      ExpOrbs.spawn(m.x, m.y, m.maxHp);
+    }
+    Wave.monsters = Wave.monsters.filter(m => m.hp > 0);
   },
 
   onHit() {
@@ -138,6 +154,9 @@ const Game = {
       ctx.lineWidth = 3;
       ctx.stroke();
     }
+
+    Weapon.draw(ctx, this.player);
+    ExpOrbs.draw(ctx);
 
     ctx.restore();
 

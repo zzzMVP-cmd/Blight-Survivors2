@@ -23,6 +23,22 @@ const Monsters = {
   // 绘制怪物（按 key 分发，目前仅 slime）
   draw(ctx, m) {
     if (m.key === 'slime') this.drawSlime(ctx, m);
+    this.drawHpBar(ctx, m);
+  },
+
+  drawHpBar(ctx, m) {
+    const ratio = Math.max(0, m.hp / m.maxHp);
+    const barW = m.radius * 2;
+    const barH = 4;
+    const x = m.x - barW / 2;
+    const y = m.y - m.radius - 8;
+
+    ctx.fillStyle = 'rgba(0,0,0,.5)';
+    ctx.fillRect(x - 1, y - 1, barW + 2, barH + 2);
+
+    const hue = ratio * 120;
+    ctx.fillStyle = 'hsl(' + hue + ',80%,50%)';
+    ctx.fillRect(x, y, barW * ratio, barH);
   },
 
   drawSlime(ctx, m) {
