@@ -11,15 +11,16 @@ Blight Survivors2/
 ├─ index.html            ← 只保留绘制层（canvas），按依赖顺序引用 js 文件（不合并）
 ├─ css/style.css         ← 全部样式
 ├─ js/
-│  ├─ heroes.js          ← 英雄数据定义
+│  ├─ systems/           ← 所有游戏系统
+│  │  ├─ heroes.js       ← 英雄数据定义
+│  │  ├─ monsters.js     ← 怪物基础数值与绘制
+│  │  ├─ monster-ai.js   ← 怪物行为（生成/移动/攻击/击退）
+│  │  ├─ weapon.js       ← 武器系统（剑状态机 + 剑气扇形效果）
+│  │  ├─ attack.js       ← 各英雄攻击判定（战士扇形判定等）
+│  │  ├─ exp-orbs.js     ← 经验球（掉落/吸引/拾取）
+│  │  └─ wave.js         ← 波次管理（准备/间隔/清场提前/1.2倍递增）
 │  ├─ menu.js            ← 开始页：英雄选择 + 开始按钮
 │  ├─ hud.js             ← 游戏内 HUD（血条/等级/波次/经验条/武器栏/道具栏）
-│  ├─ monsters.js        ← 怪物基础数值与绘制
-│  ├─ monster-ai.js      ← 怪物行为（生成/移动/攻击/击退）
-│  ├─ wave.js            ← 波次管理（准备/间隔/清场提前/1.2倍递增）
-│  ├─ weapon.js          ← 武器系统（剑状态机 + 剑气扇形效果）
-│  ├─ attack.js          ← 各英雄攻击判定（战士扇形判定等）
-│  ├─ exp-orbs.js        ← 经验球（掉落/吸引/拾取）
 │  ├─ game.js            ← 游戏主循环（玩家移动/摄像机/绘制调度）
 │  └─ main.js            ← 初始化入口（画布尺寸、构建开始页）
 ├─ electron/main.js      ← 桌面版窗口逻辑（Electron）
