@@ -9,6 +9,7 @@ window.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('resize', resizeCanvas);
 
   Menu.init();
+  Upgrade.init();
 });
 
 function resizeCanvas() {

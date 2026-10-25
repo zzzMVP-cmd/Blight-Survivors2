@@ -4,15 +4,14 @@
 const Attack = {
 
   DAMAGE_TYPES: {
-    sharp: { icon: '🗡', color: '#b91c1c' }
+    sharp: { icon: '🗡', color: '#b91c1c' },
+    crit: { icon: '💥', color: '#ff4500' }
   },
 
   KNOCKBACK_SPEED: 200,
   KNOCKBACK_DURATION: 0.15,
 
   processWarrior(player, weapon, monsters) {
-    const dtype = this.DAMAGE_TYPES.sharp;
-
     for (const arc of weapon.arcs) {
       for (const m of monsters) {
         if (arc.hitSet.has(m)) continue;
@@ -26,7 +25,17 @@ const Attack = {
           const angleToM = Math.atan2(dy, dx);
           const diff = this.normalizeAngle(angleToM - arc.facingAngle);
           if (Math.abs(diff) < arc.swingAngle / 2) {
-            m.hp -= weapon.DAMAGE;
+            let baseDmg = weapon.DAMAGE;
+            let dmg = Augment.calcDamage(player, baseDmg);
+            let dtype = this.DAMAGE_TYPES.sharp;
+
+            if (Crit.check(player)) {
+              dmg = Crit.calcDamage(player, dmg);
+              dtype = this.DAMAGE_TYPES.crit;
+            }
+
+            dmg = Math.round(dmg);
+            m.hp -= dmg;
             arc.hitSet.add(m);
 
             const nd = dist || 1;
@@ -34,7 +43,7 @@ const Attack = {
             m.kbVy = (dy / nd) * this.KNOCKBACK_SPEED;
             m.kbTimer = this.KNOCKBACK_DURATION;
 
-            DamageNumbers.add(m.x, m.y - m.radius - 8, weapon.DAMAGE, dtype);
+            DamageNumbers.add(m.x, m.y - m.radius - 8, dmg, dtype);
           }
         }
       }

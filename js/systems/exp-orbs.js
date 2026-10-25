@@ -40,6 +40,7 @@ const ExpOrbs = {
           player.exp -= player.expNext;
           player.level += 1;
           player.expNext = Math.round(player.expNext * 1.2);
+          Upgrade.show(player);
         }
         this.orbs.splice(i, 1);
       }

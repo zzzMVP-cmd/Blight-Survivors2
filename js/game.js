@@ -20,6 +20,10 @@ const Game = {
   hitFlashTime: 0,
   INV_DURATION: 0.3,
 
+  zoom: 1,
+  MIN_ZOOM: 0.3,
+  MAX_ZOOM: 3,
+
   init(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
@@ -34,6 +38,12 @@ const Game = {
       }
     });
     window.addEventListener('keyup', (e) => setKey(e.code, false));
+
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const factor = e.deltaY > 0 ? 0.92 : 1.08;
+      this.zoom = Math.max(this.MIN_ZOOM, Math.min(this.MAX_ZOOM, this.zoom * factor));
+    }, { passive: false });
   },
 
   start(heroKey) {
@@ -51,7 +61,18 @@ const Game = {
       level: 1,
       exp: 0,
       expNext: 100,
-      invTime: 0
+      invTime: 0,
+      recoveryLv: 0,
+      critRate: 0,
+      critComp: 0,
+      weaponSpeedAug: 1,
+      weaponPowerAug: 1,
+      globalSpeedAug: 1,
+      globalPowerAug: 1,
+      displaySpeedAug: 1,
+      displayPowerAug: 1,
+      overflowDmgMult: 1,
+      effectiveInterval: this.hero.attackInterval
     };
     this.shakeTime = 0;
     this.hitFlashTime = 0;
@@ -66,6 +87,7 @@ const Game = {
     Wave.init();
     this.running = true;
     this.paused = false;
+    this.zoom = 1;
     this.lastTime = performance.now();
     this.rafId = requestAnimationFrame((t) => this.loop(t));
   },
@@ -96,6 +118,7 @@ const Game = {
     if (this.hitFlashTime > 0) this.hitFlashTime -= dt;
 
     this.updatePlayer(dt);
+    Recovery.update(dt, this.player);
     Wave.update(dt);
     Weapon.update(dt, this.player, Wave.monsters);
     Attack.processWarrior(this.player, Weapon, Wave.monsters);
@@ -147,6 +170,15 @@ const Game = {
     Menu.show();
   },
 
+  pauseForUpgrade() {
+    this.paused = true;
+  },
+
+  resumeFromUpgrade() {
+    this.paused = false;
+    this.lastTime = performance.now();
+  },
+
   onHit() {
     this.shakeTime = 0.2;
     this.hitFlashTime = 0.3;
@@ -169,7 +201,9 @@ const Game = {
     }
 
     ctx.save();
-    ctx.translate(camX, camY);
+    ctx.translate(w / 2, h / 2);
+    ctx.scale(this.zoom, this.zoom);
+    ctx.translate(-w / 2 + camX, -h / 2 + camY);
 
     for (const m of Wave.monsters) {
       Monsters.draw(ctx, m);

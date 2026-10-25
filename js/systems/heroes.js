@@ -18,7 +18,18 @@ const HEROES = {
     attackRange: 120,
     attackInterval: 2,
     swordLength: 40,
-    swingAngle: Math.PI / 2
+    swingAngle: Math.PI / 2,
+    recoveryLv: 0,
+    critRate: 0,
+    critComp: 0,
+    weaponSpeedAug: 1,
+    weaponPowerAug: 1,
+    globalSpeedAug: 1,
+    globalPowerAug: 1,
+    displaySpeedAug: 1,
+    displayPowerAug: 1,
+    overflowDmgMult: 1,
+    effectiveInterval: 2
   }
 };
 
