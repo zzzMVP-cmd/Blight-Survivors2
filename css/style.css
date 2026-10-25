@@ -81,3 +81,87 @@ h1 {
   box-shadow:none;
   cursor:not-allowed;
 }
+
+/* ===== 游戏内 HUD ===== */
+.hud {
+  position:fixed; inset:0;
+  pointer-events:none;
+  z-index:20;
+}
+.hud.hidden { display:none; }
+
+/* 屏幕顶部经验条（左端到右端，绿色） */
+.exp-bar {
+  position:absolute; top:0; left:0; right:0;
+  height:12px;
+  background:rgba(14,14,24,.7);
+  overflow:hidden;
+}
+.exp-fill {
+  height:100%; width:0%;
+  background:linear-gradient(90deg,#2ecc71,#a8f07a);
+  box-shadow:0 0 10px rgba(46,204,113,.5);
+  transition:width .2s linear;
+}
+
+/* 左上角血条 */
+.hp-box {
+  position:absolute; top:24px; left:18px;
+  width:300px;
+}
+.hp-bar {
+  width:100%; height:22px;
+  border:2px solid #3a3a52;
+  border-radius:8px;
+  background:#0e0e18;
+  overflow:hidden;
+}
+.hp-fill {
+  height:100%; width:100%;
+  background:linear-gradient(90deg,#e33,#ff5c5c);
+  transition:width .2s linear;
+}
+.hp-text {
+  margin-top:6px;
+  text-align:center;
+  font-size:14px; color:#e8e8f0;
+  letter-spacing:1px;
+}
+.level-text {
+  margin-top:4px;
+  text-align:center;
+  font-size:16px; font-weight:700; color:#ffd76e;
+  letter-spacing:1px;
+}
+.wave-text {
+  margin-top:3px;
+  text-align:center;
+  font-size:12px; color:#9a9ab0;
+  letter-spacing:1px;
+}
+
+/* 左下角武器栏 */
+.weapon-bar {
+  position:absolute; left:18px; bottom:18px;
+  display:flex; flex-direction:row; gap:12px;
+}
+.weapon-slot {
+  width:72px;
+  padding:10px 8px 6px;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  background:rgba(14,14,24,.85);
+  border:2px solid #3a3a52;
+  border-radius:10px;
+}
+.weapon-slot img { width:40px; height:40px; object-fit:contain; }
+.weapon-slot span { font-size:11px; color:#cbb6ff; text-align:center; line-height:1.2; }
+
+/* 右侧道具栏（暂空占位） */
+.item-bar {
+  position:absolute; right:18px; top:18px;
+  bottom:18px;
+  width:96px;
+  border:2px dashed #3a3a52;
+  border-radius:10px;
+  background:rgba(14,14,24,.5);
+}
