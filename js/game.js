@@ -74,12 +74,14 @@ const Game = {
     if (!this.running) return;
     const elapsed = Math.min(0.1, (t - this.lastTime) / 1000);
     this.lastTime = t;
-    this.accumulator += elapsed;
 
-    while (this.accumulator >= this.FIXED_DT) {
-      this.fixedUpdate(this.FIXED_DT);
-      this.accumulator -= this.FIXED_DT;
-    }
+    if (!this.paused) {
+      this.accumulator += elapsed;
+
+      while (this.accumulator >= this.FIXED_DT) {
+        this.fixedUpdate(this.FIXED_DT);
+        this.accumulator -= this.FIXED_DT;
+      }
     }
 
     this.draw();
