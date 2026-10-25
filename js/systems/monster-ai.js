@@ -22,11 +22,21 @@ const MonsterAI = {
       damage: damage,
       color: t.color,
       eyeColor: t.eyeColor,
-      hitCd: 0
+      hitCd: 0,
+      kbVx: 0,
+      kbVy: 0,
+      kbTimer: 0
     };
   },
 
   move(m, dt) {
+    if (m.kbTimer > 0) {
+      m.kbTimer -= dt;
+      m.x += m.kbVx * dt;
+      m.y += m.kbVy * dt;
+      return;
+    }
+
     const px = Game.player.x;
     const py = Game.player.y;
     const dx = px - m.x;

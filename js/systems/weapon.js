@@ -170,20 +170,28 @@ const Weapon = {
     ctx.fillStyle = '#888';
     ctx.fillRect(8.5, -6, 3, 12);
 
+    const bladeLen = this.SWORD_LENGTH * 0.75;
+    const tipLen = this.SWORD_LENGTH * 0.25;
+    const bladeW = 3.5;
+
     ctx.fillStyle = '#d8d8d8';
+    ctx.fillRect(10, -bladeW, bladeLen, bladeW * 2);
+
     ctx.beginPath();
-    ctx.moveTo(10, -3.5);
-    ctx.lineTo(10 + this.SWORD_LENGTH, 0);
-    ctx.lineTo(10, 3.5);
+    ctx.moveTo(10 + bladeLen, -bladeW);
+    ctx.lineTo(10 + bladeLen + tipLen, 0);
+    ctx.lineTo(10 + bladeLen, bladeW);
     ctx.closePath();
     ctx.fill();
 
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 1;
+    ctx.strokeRect(10, -bladeW, bladeLen, bladeW * 2);
+
     ctx.beginPath();
-    ctx.moveTo(12, -2.5);
-    ctx.lineTo(10 + this.SWORD_LENGTH - 2, 0);
-    ctx.lineTo(12, 2.5);
+    ctx.moveTo(10 + bladeLen, -bladeW);
+    ctx.lineTo(10 + bladeLen + tipLen, 0);
+    ctx.lineTo(10 + bladeLen, bladeW);
     ctx.closePath();
     ctx.stroke();
 
