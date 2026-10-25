@@ -165,3 +165,20 @@ h1 {
   border-radius:10px;
   background:rgba(14,14,24,.5);
 }
+
+/* 暂停页 */
+.pause-overlay { gap:20px; }
+.pause-title {
+  font-size:clamp(24px,5vw,42px);
+  font-weight:700;
+  letter-spacing:4px;
+  color:#e8e8f0;
+}
+.btn.retreat {
+  background:linear-gradient(180deg,#5a5a6a,#3a3a48);
+  color:#c8c8d0;
+  box-shadow:0 0 12px rgba(100,100,120,.3);
+}
+.btn.retreat:hover {
+  background:linear-gradient(180deg,#6a6a7a,#4a4a58);
+}

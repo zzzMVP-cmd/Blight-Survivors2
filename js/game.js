@@ -7,6 +7,7 @@ const Game = {
   hero: null,
   player: null,
   running: false,
+  paused: false,
   rafId: null,
   lastTime: 0,
   keys: {},
@@ -25,7 +26,13 @@ const Game = {
 
     this.keys = {};
     const setKey = (code, down) => { this.keys[code] = down; };
-    window.addEventListener('keydown', (e) => setKey(e.code, true));
+    window.addEventListener('keydown', (e) => {
+      setKey(e.code, true);
+      if (e.code === 'Escape' && this.running) {
+        if (this.paused) this.resume();
+        else this.pause();
+      }
+    });
     window.addEventListener('keyup', (e) => setKey(e.code, false));
   },
 
@@ -58,6 +65,7 @@ const Game = {
     HUD.update(this.player);
     Wave.init();
     this.running = true;
+    this.paused = false;
     this.lastTime = performance.now();
     this.rafId = requestAnimationFrame((t) => this.loop(t));
   },
@@ -71,6 +79,7 @@ const Game = {
     while (this.accumulator >= this.FIXED_DT) {
       this.fixedUpdate(this.FIXED_DT);
       this.accumulator -= this.FIXED_DT;
+    }
     }
 
     this.draw();
@@ -115,6 +124,25 @@ const Game = {
       ExpOrbs.spawn(m.x, m.y, m.maxHp);
     }
     Wave.monsters = Wave.monsters.filter(m => m.hp > 0);
+  },
+
+  pause() {
+    this.paused = true;
+    Menu.showPause();
+  },
+
+  resume() {
+    this.paused = false;
+    this.lastTime = performance.now();
+    Menu.hidePause();
+  },
+
+  retreat() {
+    this.running = false;
+    this.paused = false;
+    Menu.hidePause();
+    HUD.hide();
+    Menu.show();
   },
 
   onHit() {

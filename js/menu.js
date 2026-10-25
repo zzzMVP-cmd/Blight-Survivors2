@@ -1,11 +1,14 @@
 'use strict';
 
-// 开始页：顶部一排英雄选择卡片 + 底部“开始游戏”按钮
+// 开始页：顶部一排英雄选择卡片 + 底部"开始游戏"按钮
+// 暂停页：继续游戏 / 主动撤离
 const Menu = {
   selectedKey: null,
   overlay: null,
   startBtn: null,
   heroCards: [],
+
+  pauseOverlay: null,
 
   init() {
     this.overlay = document.createElement('div');
@@ -23,6 +26,7 @@ const Menu = {
     });
 
     this.buildHeroCards();
+    this.buildPauseOverlay();
   },
 
   buildHeroCards() {
@@ -51,11 +55,43 @@ const Menu = {
     this.startBtn.disabled = false;
   },
 
+  buildPauseOverlay() {
+    this.pauseOverlay = document.createElement('div');
+    this.pauseOverlay.className = 'overlay pause-overlay hidden';
+
+    const title = document.createElement('div');
+    title.className = 'pause-title';
+    title.textContent = '游戏暂停';
+    this.pauseOverlay.appendChild(title);
+
+    const resumeBtn = document.createElement('button');
+    resumeBtn.className = 'btn';
+    resumeBtn.textContent = '继续游戏';
+    resumeBtn.addEventListener('click', () => Game.resume());
+    this.pauseOverlay.appendChild(resumeBtn);
+
+    const retreatBtn = document.createElement('button');
+    retreatBtn.className = 'btn retreat';
+    retreatBtn.textContent = '主动撤离';
+    retreatBtn.addEventListener('click', () => Game.retreat());
+    this.pauseOverlay.appendChild(retreatBtn);
+
+    document.body.appendChild(this.pauseOverlay);
+  },
+
   hide() {
     if (this.overlay) this.overlay.classList.add('hidden');
   },
 
   show() {
     if (this.overlay) this.overlay.classList.remove('hidden');
+  },
+
+  showPause() {
+    if (this.pauseOverlay) this.pauseOverlay.classList.remove('hidden');
+  },
+
+  hidePause() {
+    if (this.pauseOverlay) this.pauseOverlay.classList.add('hidden');
   }
 };
