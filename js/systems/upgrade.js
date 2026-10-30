@@ -6,6 +6,12 @@ const Upgrade = {
   refreshBtn: null,
   cardContainer: null,
 
+  BASE_REFRESH: 1,
+  BASE_CARDS: 5,
+
+  refreshBonus: 0,
+  cardBonus: 0,
+
   refreshCount: 1,
   cardCount: 5,
 
@@ -53,12 +59,16 @@ const Upgrade = {
   },
 
   resetRun() {
-    this.refreshCount = 1;
-    this.cardCount = 5;
+    this.refreshBonus = 0;
+    this.cardBonus = 0;
+    this.refreshCount = this.BASE_REFRESH;
+    this.cardCount = this.BASE_CARDS;
     this.radiantComp = 0;
   },
 
   show(player) {
+    this.refreshCount = this.BASE_REFRESH + this.refreshBonus;
+    this.cardCount = this.BASE_CARDS + this.cardBonus;
     this.overlay.classList.remove('hidden');
     this.updateRefreshBtn();
     this.generateCards(player);
@@ -198,8 +208,9 @@ const Upgrade = {
           cardType: 'character',
           name: '刷新次数',
           tier: -1,
-          desc: '刷新机会 +1',
+          desc: '刷新次数永久 +1\n每次升级可刷新 ' + (Upgrade.BASE_REFRESH + Upgrade.refreshBonus + 1) + ' 次',
           apply() {
+            Upgrade.refreshBonus += 1;
             Upgrade.refreshCount += 1;
           }
         };
@@ -209,8 +220,9 @@ const Upgrade = {
           cardType: 'character',
           name: '卡牌数量',
           tier: -1,
-          desc: '卡牌数 +2',
+          desc: '卡牌数量永久 +2\n每次升级可选 ' + (Upgrade.BASE_CARDS + Upgrade.cardBonus + 2) + ' 张',
           apply() {
+            Upgrade.cardBonus += 2;
             Upgrade.cardCount += 2;
           }
         };
@@ -233,13 +245,22 @@ const Upgrade = {
     const isSpeed = Math.random() < 0.5;
     const tier = this.rollTier();
 
+    const hero = HEROES[player.key];
     const mults = isGlobal ? this.GLOBAL_AUG_MULTS : this.WEAPON_AUG_MULTS;
     const scope = isGlobal ? '全体' : '武器';
     const attr = isSpeed ? '速度' : '力量';
 
+    let name;
+    if (isGlobal) {
+      name = scope + attr + '增幅';
+    } else {
+      const augNames = hero.weaponAugNames || { speed: '迅捷', power: '强袭' };
+      name = hero.weapon + '·' + (isSpeed ? augNames.speed : augNames.power);
+    }
+
     return {
       cardType: 'augment',
-      name: scope + attr + '增幅',
+      name: name,
       tier: tier,
       desc: this.TIER_NAMES[tier] + '级：' + scope + attr + ' ×' + mults[tier],
       apply() {

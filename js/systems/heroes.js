@@ -9,6 +9,7 @@ const HEROES = {
     desc: '均衡近战英雄，生命值高，移速较慢',
     weapon: '破阵斩',
     weaponIcon: 'assets/images/weapon_warrior.png',
+    weaponAugNames: { speed: '疾风', power: '裂石' },
     damageType: 'sharp',
     color: '#ffb84d',
     projColor: '#ffd76e',
