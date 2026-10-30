@@ -52,10 +52,13 @@ const Upgrade = {
     document.body.appendChild(this.overlay);
   },
 
-  show(player) {
+  resetRun() {
     this.refreshCount = 1;
     this.cardCount = 5;
     this.radiantComp = 0;
+  },
+
+  show(player) {
     this.overlay.classList.remove('hidden');
     this.updateRefreshBtn();
     this.generateCards(player);
@@ -114,7 +117,7 @@ const Upgrade = {
     switch (type) {
       case 'character': return this.randomCharacterCard(player);
       case 'augment': return this.randomAugmentCard(player);
-      case 'weaponUp': return { cardType: 'weaponUp', name: '武器强化', desc: '（暂无可用）', tier: -1, apply() {} };
+      case 'weaponUp': return { cardType: 'weaponUp', name: player.weapons.map(w => w.name).join('/') + ' 武器强化', desc: '（暂无可用）', tier: -1, apply() {} };
       case 'newWeapon': return { cardType: 'newWeapon', name: '新武器', desc: '（暂无可用）', tier: -1, apply() {} };
     }
   },
@@ -172,7 +175,7 @@ const Upgrade = {
         return {
           cardType: 'character',
           name: '恢复强化',
-          tier: tier,
+          tier: -1,
           desc: '恢复等级 +1\n每秒回复 ' + (player.recoveryLv + 1) + ' × 英雄等级',
           apply() {
             player.recoveryLv += 1;
@@ -183,7 +186,7 @@ const Upgrade = {
         return {
           cardType: 'character',
           name: '暴击增强',
-          tier: tier,
+          tier: -1,
           desc: '暴击率 +10%\n暴击伤害 = log₂(lv) × 攻击伤害',
           apply() {
             player.critRate = Math.min(1, player.critRate + 0.1);
@@ -194,7 +197,7 @@ const Upgrade = {
         return {
           cardType: 'character',
           name: '刷新次数',
-          tier: tier,
+          tier: -1,
           desc: '刷新机会 +1',
           apply() {
             Upgrade.refreshCount += 1;
@@ -205,7 +208,7 @@ const Upgrade = {
         return {
           cardType: 'character',
           name: '卡牌数量',
-          tier: tier,
+          tier: -1,
           desc: '卡牌数 +2',
           apply() {
             Upgrade.cardCount += 2;
@@ -216,7 +219,7 @@ const Upgrade = {
         return {
           cardType: 'character',
           name: '吸收范围',
-          tier: tier,
+          tier: -1,
           desc: '经验吸收范围 +30（上限' + Upgrade.ABSORB_CAP + '）',
           apply() {
             ExpOrbs.ATTRACT_RANGE = Math.min(Upgrade.ABSORB_CAP, ExpOrbs.ATTRACT_RANGE + Upgrade.ABSORB_PER_PICK);
@@ -300,6 +303,14 @@ const Upgrade = {
 
     const tierColor = card.tier >= 0 ? this.TIER_COLORS[card.tier] : '#888';
     const tierName = card.tier >= 0 ? this.TIER_NAMES[card.tier] : '';
+
+    if (card.tier >= 0) {
+      el.style.borderColor = tierColor;
+    }
+
+    if (card.tier === 3) {
+      el.classList.add('card-radiant');
+    }
 
     el.innerHTML =
       '<div class="card-name" style="color:' + tierColor + '">' + card.name + '</div>' +

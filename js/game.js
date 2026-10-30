@@ -80,6 +80,7 @@ const Game = {
     Weapon.init(this.hero);
     ExpOrbs.clear();
     DamageNumbers.clear();
+    Upgrade.resetRun();
     Menu.hide();
     HUD.build();
     HUD.setWeapons(this.player.weapons);
