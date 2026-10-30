@@ -25,6 +25,7 @@ const Weapon = {
   ARC_DURATION: 0.25,
   DAMAGE: 25,
   SWING_ANGLE: Math.PI / 2,
+  TURN_SPEED: 2.5,
 
   init(heroData) {
     this.state = 'idle';
@@ -49,20 +50,28 @@ const Weapon = {
       case 'idle': this.updateIdle(dt, player, monsters); break;
       case 'aiming': this.updateAiming(dt, player, monsters); break;
       case 'swinging': this.updateSwinging(dt, player, monsters); break;
-      case 'cooldown': this.updateCooldown(dt, player); break;
+      case 'cooldown': this.updateCooldown(dt, player, monsters); break;
     }
   },
 
   updateIdle(dt, player, monsters) {
-    this.angle = this.moveAngle;
-
     const target = this.findTarget(player, monsters);
     if (target) {
       this.target = target;
       this.targetAngle = Math.atan2(target.y - player.y, target.x - player.x);
       this.state = 'aiming';
       this.aimTimer = this.AIM_DURATION;
+      return;
     }
+
+    this.turnToward(this.moveAngle, dt);
+  },
+
+  turnToward(targetAngle, dt) {
+    const diff = this.angleDiff(this.angle, targetAngle);
+    const maxStep = this.TURN_SPEED * dt;
+    if (Math.abs(diff) <= maxStep) this.angle = targetAngle;
+    else this.angle += Math.sign(diff) * maxStep;
   },
 
   updateAiming(dt, player, monsters) {
@@ -115,11 +124,21 @@ const Weapon = {
     }
   },
 
-  updateCooldown(dt, player) {
+  updateCooldown(dt, player, monsters) {
     this.cooldownTimer -= dt;
+
+    this.turnToward(this.moveAngle, dt);
+
     if (this.cooldownTimer <= 0) {
-      this.state = 'idle';
-      this.angle = this.moveAngle;
+      const target = this.findTarget(player, monsters);
+      if (target) {
+        this.target = target;
+        this.targetAngle = Math.atan2(target.y - player.y, target.x - player.x);
+        this.state = 'aiming';
+        this.aimTimer = this.AIM_DURATION;
+      } else {
+        this.state = 'idle';
+      }
     }
   },
 

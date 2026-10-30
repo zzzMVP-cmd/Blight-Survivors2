@@ -14,10 +14,14 @@ const Monsters = {
     }
   },
 
-  // 血量越大体积越大：面积 ∝ HP → 半径 ∝ √HP
-  calcRadius(hp, typeKey) {
+  SIZE_GROWTH: 0.03,
+  SIZE_CAP_WAVE: 50,
+
+  // 体积随波次线性增长（每波 +3%），第 50 波封顶后不再增大
+  calcRadius(wave, typeKey) {
     const t = this.TYPES[typeKey];
-    return t.baseRadius * Math.sqrt(hp / t.baseHp);
+    const w = Math.max(1, Math.min(wave, this.SIZE_CAP_WAVE));
+    return t.baseRadius * (1 + this.SIZE_GROWTH * (w - 1));
   },
 
   // 绘制怪物（按 key 分发，目前仅 slime）

@@ -4,11 +4,11 @@
 const MonsterAI = {
   HIT_CD: 1,
 
-  spawn(typeKey, player, hp, damage) {
+  spawn(typeKey, player, hp, damage, wave) {
     const t = Monsters.TYPES[typeKey];
     const dist = 360;
     const ang = Math.random() * Math.PI * 2;
-    const radius = Monsters.calcRadius(hp, typeKey);
+    const radius = Monsters.calcRadius(wave, typeKey);
 
     return {
       key: typeKey,

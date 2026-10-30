@@ -78,7 +78,7 @@ const Wave = {
     }
 
     for (let i = 0; i < this.waveCount; i++) {
-      this.monsters.push(MonsterAI.spawn('slime', Game.player, this.waveHp, this.waveDamage));
+      this.monsters.push(MonsterAI.spawn('slime', Game.player, this.waveHp, this.waveDamage, this.wave));
     }
   },
 
