@@ -258,3 +258,17 @@ h1 {
 .card-weaponUp:hover { border-color:#bc7a7a; box-shadow:0 0 16px rgba(188,122,122,.3); }
 .card-newWeapon { border-color:#8c7a5a; }
 .card-newWeapon:hover { border-color:#bc9a7a; box-shadow:0 0 16px rgba(188,154,122,.3); }
+
+/* 炫彩发光 */
+@keyframes radiantGlow {
+  0%, 100% { box-shadow:0 0 8px rgba(255,105,180,.5), 0 0 20px rgba(255,105,180,.25); }
+  50% { box-shadow:0 0 14px rgba(255,105,180,.7), 0 0 36px rgba(255,105,180,.4), 0 0 56px rgba(255,105,180,.15); }
+}
+.card-radiant {
+  animation: radiantGlow 1.6s ease-in-out infinite;
+  border-color: #ff69b4;
+}
+.card-radiant:hover {
+  animation: radiantGlow 1.6s ease-in-out infinite;
+  box-shadow:0 0 20px rgba(255,105,180,.8), 0 0 44px rgba(255,105,180,.5), 0 0 64px rgba(255,105,180,.2);
+}
