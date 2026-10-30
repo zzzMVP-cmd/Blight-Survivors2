@@ -4,9 +4,12 @@
 const Attack = {
 
   DAMAGE_TYPES: {
-    sharp: { icon: '🗡', color: '#b91c1c' },
-    crit: { icon: '💥', color: '#ff4500' }
+    sharp: { icon: '🗡', color: '#b91c1c' }
   },
+
+  PIERCE_BASE: 150,
+  PIERCE_PER_WAVE: 35,
+  PIERCE_MULT_PER_LEVEL: 0.05,
 
   KNOCKBACK_SPEED: 200,
   KNOCKBACK_DURATION: 0.15,
@@ -25,16 +28,18 @@ const Attack = {
           const angleToM = Math.atan2(dy, dx);
           const diff = this.normalizeAngle(angleToM - arc.facingAngle);
           if (Math.abs(diff) < arc.swingAngle / 2) {
-            let baseDmg = weapon.DAMAGE;
-            let dmg = Augment.calcDamage(player, baseDmg);
-            let dtype = this.DAMAGE_TYPES.sharp;
-
-            if (Crit.check(player)) {
-              dmg = Crit.calcDamage(player, dmg);
-              dtype = this.DAMAGE_TYPES.crit;
-            }
+            let dmg = Augment.calcDamage(player, weapon.DAMAGE);
+            const isCrit = Crit.check(player);
+            if (isCrit) dmg = Crit.calcDamage(player, dmg);
 
             dmg = Math.round(dmg);
+
+            const threshold = this.PIERCE_BASE + this.PIERCE_PER_WAVE * (Math.max(1, Wave.wave) - 1);
+            const pierce = dmg > threshold;
+            if (pierce) {
+              dmg = Math.round(dmg * (1 + this.PIERCE_MULT_PER_LEVEL * Math.max(1, player.level)));
+            }
+
             m.hp -= dmg;
             arc.hitSet.add(m);
 
@@ -43,7 +48,7 @@ const Attack = {
             m.kbVy = (dy / nd) * this.KNOCKBACK_SPEED;
             m.kbTimer = this.KNOCKBACK_DURATION;
 
-            DamageNumbers.add(m.x, m.y - m.radius - 8, dmg, dtype);
+            DamageNumbers.add(m.x, m.y - m.radius - 8, dmg, isCrit, pierce);
           }
         }
       }
@@ -63,12 +68,25 @@ const DamageNumbers = {
   DURATION: 0.8,
   RISE_SPEED: 60,
 
-  add(x, y, value, dtype) {
+  CRIT_ICON: '💥',
+  CRIT_COLOR: '#ff4500',
+  PIERCE_LABEL: '穿透',
+  PIERCE_COLOR: '#b91c1c',
+
+  add(x, y, value, isCrit, pierce) {
+    const icon = (isCrit ? this.CRIT_ICON : '') + Attack.DAMAGE_TYPES.sharp.icon;
+    const text = pierce
+      ? icon + ' ' + this.PIERCE_LABEL + ' ' + value
+      : icon + ' ' + value;
+
+    let color = isCrit ? this.CRIT_COLOR : Attack.DAMAGE_TYPES.sharp.color;
+    if (pierce) color = this.PIERCE_COLOR;
+
     this.items.push({
       x: x + (Math.random() - 0.5) * 10,
       y: y,
-      text: dtype.icon + value,
-      color: dtype.color,
+      text: text,
+      color: color,
       timer: this.DURATION,
       maxTimer: this.DURATION
     });
