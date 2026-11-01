@@ -6,6 +6,9 @@ const HUD = {
   expFill: null,
   hpFill: null,
   hpText: null,
+  shieldBar: null,
+  shieldFill: null,
+  shieldText: null,
   levelText: null,
   waveText: null,
   weaponBar: null,
@@ -19,8 +22,12 @@ const HUD = {
     this.root.innerHTML =
       '<div class="exp-bar"><div class="exp-fill"></div></div>' +
       '<div class="hp-box">' +
-        '<div class="hp-bar"><div class="hp-fill"></div></div>' +
+        '<div class="hp-wrap">' +
+          '<div class="shield-bar"><div class="shield-fill"></div></div>' +
+          '<div class="hp-bar"><div class="hp-fill"></div></div>' +
+        '</div>' +
         '<div class="hp-text"></div>' +
+        '<div class="shield-text"></div>' +
         '<div class="level-text"></div>' +
         '<div class="wave-text"></div>' +
       '</div>' +
@@ -30,6 +37,9 @@ const HUD = {
     this.expFill = this.root.querySelector('.exp-fill');
     this.hpFill = this.root.querySelector('.hp-fill');
     this.hpText = this.root.querySelector('.hp-text');
+    this.shieldBar = this.root.querySelector('.shield-bar');
+    this.shieldFill = this.root.querySelector('.shield-fill');
+    this.shieldText = this.root.querySelector('.shield-text');
     this.levelText = this.root.querySelector('.level-text');
     this.waveText = this.root.querySelector('.wave-text');
     this.weaponBar = this.root.querySelector('.weapon-bar');
@@ -57,6 +67,18 @@ const HUD = {
       : 0;
     if (this.hpFill) this.hpFill.style.width = pct + '%';
     if (this.hpText) this.hpText.textContent = Math.ceil(player.hp) + ' / ' + player.maxHp;
+
+    const shieldPct = player.maxShield > 0
+      ? Math.max(0, Math.min(100, (player.shield / player.maxShield) * 100))
+      : 0;
+    if (this.shieldFill) this.shieldFill.style.width = shieldPct + '%';
+    if (this.shieldBar) this.shieldBar.classList.toggle('hidden', player.maxShield <= 0);
+    if (this.shieldText) {
+      this.shieldText.textContent = player.maxShield > 0
+        ? Math.ceil(player.shield) + ' / ' + player.maxShield
+        : '';
+    }
+
     if (this.levelText) this.levelText.textContent = 'lv.' + player.level;
 
     const expPct = player.expNext > 0

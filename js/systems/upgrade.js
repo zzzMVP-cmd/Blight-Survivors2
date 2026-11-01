@@ -22,6 +22,7 @@ const Upgrade = {
   TIER_PROBS: [0.42, 0.32, 0.22, 0.04],
 
   HP_MULTS: [1.2, 1.4, 1.8, 2.6],
+  SHIELD_MULTS: [1.2, 1.4, 1.8, 2.6],
   SPD_MULTS: [1.1, 1.2, 1.4, 1.8],
   SPD_CAP: 400,
 
@@ -136,6 +137,9 @@ const Upgrade = {
     const options = [];
 
     options.push({ subType: 'hp', name: '血量强化', weight: 1 });
+    if (Shield.calcBase(player.level) > 0) {
+      options.push({ subType: 'shield', name: '护盾强化', weight: 1 });
+    }
     if (player.speed < this.SPD_CAP) {
       options.push({ subType: 'speed', name: '移速强化', weight: 1 });
     }
@@ -167,6 +171,17 @@ const Upgrade = {
           apply() {
             player.maxHp = Math.round(player.maxHp * Upgrade.HP_MULTS[tier]);
             player.hp = Math.min(player.hp + Math.round(player.maxHp * (Upgrade.HP_MULTS[tier] - 1)), player.maxHp);
+          }
+        };
+
+      case 'shield':
+        return {
+          cardType: 'character',
+          name: '护盾强化',
+          tier: tier,
+          desc: this.TIER_NAMES[tier] + '级：护盾 ×' + this.SHIELD_MULTS[tier] + '\n当前最大护盾 ' + player.maxShield,
+          apply() {
+            Shield.grow(player, Upgrade.SHIELD_MULTS[tier]);
           }
         };
 

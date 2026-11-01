@@ -7,8 +7,6 @@ const Attack = {
     sharp: { icon: '🗡', color: '#b91c1c' }
   },
 
-  PIERCE_BASE: 150,
-  PIERCE_PER_WAVE: 35,
   PIERCE_MULT_PER_LEVEL: 0.05,
 
   KNOCKBACK_SPEED: 200,
@@ -32,15 +30,20 @@ const Attack = {
             const isCrit = Crit.check(player);
             if (isCrit) dmg = Crit.calcDamage(player, dmg);
 
-            dmg = Math.round(dmg);
+            if (m.shield > 0) dmg = dmg / m.shield;
 
-            const threshold = this.PIERCE_BASE + this.PIERCE_PER_WAVE * (Math.max(1, Wave.wave) - 1);
+            const volume = Math.pow(Math.PI * m.radius * m.radius, 2);
+            const threshold = (m.hp + m.shield) / volume;
             const pierce = dmg > threshold;
             if (pierce) {
-              dmg = Math.round(dmg * (1 + this.PIERCE_MULT_PER_LEVEL * Math.max(1, player.level)));
+              dmg = dmg * (1 + this.PIERCE_MULT_PER_LEVEL * Math.max(1, player.level));
             }
 
-            m.hp -= dmg;
+            dmg = Math.max(1, Math.round(dmg));
+
+            const absorbed = Math.min(m.shield, dmg);
+            m.shield -= absorbed;
+            m.hp -= (dmg - absorbed);
             arc.hitSet.add(m);
 
             const nd = dist || 1;
