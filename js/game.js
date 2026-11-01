@@ -24,6 +24,8 @@ const Game = {
   MIN_ZOOM: 0.3,
   MAX_ZOOM: 3,
 
+  MAX_RENDER_MONSTERS: 100,
+
   init(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
@@ -190,6 +192,22 @@ const Game = {
     this.player.invTime = this.INV_DURATION;
   },
 
+  // 只渲染距离英雄最近的 MAX_RENDER_MONSTERS 只怪物
+  visibleMonsters() {
+    const list = Wave.monsters;
+    if (list.length <= this.MAX_RENDER_MONSTERS) return list;
+
+    const px = this.player.x;
+    const py = this.player.y;
+    const scored = list.map((m) => {
+      const dx = m.x - px;
+      const dy = m.y - py;
+      return { m, d: dx * dx + dy * dy };
+    });
+    scored.sort((a, b) => a.d - b.d);
+    return scored.slice(0, this.MAX_RENDER_MONSTERS).map((o) => o.m);
+  },
+
   draw() {
     const ctx = this.ctx;
     const w = this.canvas.width;
@@ -210,7 +228,7 @@ const Game = {
     ctx.scale(this.zoom, this.zoom);
     ctx.translate(-w / 2 + camX, -h / 2 + camY);
 
-    for (const m of Wave.monsters) {
+    for (const m of this.visibleMonsters()) {
       Monsters.draw(ctx, m);
     }
 

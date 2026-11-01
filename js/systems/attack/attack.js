@@ -70,6 +70,7 @@ const DamageNumbers = {
   items: [],
   DURATION: 0.8,
   RISE_SPEED: 60,
+  MAX_RENDER: 100,
 
   CRIT_ICON: '💥',
   CRIT_COLOR: '#ff4500',
@@ -89,6 +90,7 @@ const DamageNumbers = {
       x: x + (Math.random() - 0.5) * 10,
       y: y,
       text: text,
+      value: value,
       color: color,
       timer: this.DURATION,
       maxTimer: this.DURATION
@@ -104,8 +106,17 @@ const DamageNumbers = {
     }
   },
 
+  // 只渲染数值最高的 MAX_RENDER 条，避免同屏数字过多拖慢帧率
+  visibleItems() {
+    if (this.items.length <= this.MAX_RENDER) return this.items;
+    return this.items
+      .slice()
+      .sort((a, b) => b.value - a.value)
+      .slice(0, this.MAX_RENDER);
+  },
+
   draw(ctx) {
-    for (const d of this.items) {
+    for (const d of this.visibleItems()) {
       const alpha = Math.min(1, d.timer / (d.maxTimer * 0.4));
       ctx.save();
       ctx.globalAlpha = alpha;
