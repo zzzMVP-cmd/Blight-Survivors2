@@ -17,6 +17,9 @@ const Monsters = {
   SIZE_GROWTH: 0.03,
   SIZE_CAP_WAVE: 50,
 
+  SHIELD_WAVE_STEP: 50,
+  SHIELD_SCALE: 1.2,
+
   // 体积随波次线性增长（每波 +3%），第 50 波封顶后不再增大
   calcRadius(wave, typeKey) {
     const t = this.TYPES[typeKey];
@@ -24,10 +27,49 @@ const Monsters = {
     return t.baseRadius * (1 + this.SIZE_GROWTH * (w - 1));
   },
 
+  // 每 50 波基础护盾 +1，且整体每波 ×1.2：floor(波数/50) × 1.2^波数
+  calcShield(wave) {
+    const w = Math.max(0, wave);
+    return Math.round(Math.floor(w / this.SHIELD_WAVE_STEP) * Math.pow(this.SHIELD_SCALE, w));
+  },
+
   // 绘制怪物（按 key 分发，目前仅 slime）
   draw(ctx, m) {
     if (m.key === 'slime') this.drawSlime(ctx, m);
+    this.drawShieldRing(ctx, m);
     this.drawHpBar(ctx, m);
+  },
+
+  // 护盾环：白偏色细圈，下部留缺口显示护盾值，护盾越少越透明
+  drawShieldRing(ctx, m) {
+    if (m.maxShield <= 0) return;
+
+    const ratio = Math.max(0, Math.min(1, m.shield / m.maxShield));
+    const r = m.radius + 5;
+    const gap = 0.7;
+    const start = Math.PI / 2 + gap;
+    const end = Math.PI / 2 - gap + Math.PI * 2;
+
+    ctx.save();
+    ctx.globalAlpha = 0.12 + 0.88 * ratio;
+    ctx.strokeStyle = '#f2f4ff';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(m.x, m.y, r, start, end);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#e8ecff';
+    ctx.strokeStyle = 'rgba(0,0,0,.65)';
+    ctx.lineWidth = 3;
+    const ty = m.y + r + 12;
+    const text = Math.ceil(m.shield).toString();
+    ctx.strokeText(text, m.x, ty);
+    ctx.fillText(text, m.x, ty);
+    ctx.restore();
   },
 
   drawHpBar(ctx, m) {
@@ -35,7 +77,7 @@ const Monsters = {
     const barW = m.radius * 2;
     const barH = 4;
     const x = m.x - barW / 2;
-    const y = m.y - m.radius - 8;
+    const y = m.y - m.radius - 14;
 
     ctx.fillStyle = 'rgba(0,0,0,.5)';
     ctx.fillRect(x - 1, y - 1, barW + 2, barH + 2);

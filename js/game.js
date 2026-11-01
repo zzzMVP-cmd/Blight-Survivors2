@@ -18,7 +18,7 @@ const Game = {
   shakeTime: 0,
   shakeIntensity: 8,
   hitFlashTime: 0,
-  INV_DURATION: 0.3,
+  INV_DURATION: 0.5,
 
   zoom: 1,
   MIN_ZOOM: 0.3,
@@ -55,6 +55,9 @@ const Game = {
       r: 18,
       hp: this.hero.hp,
       maxHp: this.hero.hp,
+      shieldMult: 1,
+      shield: 0,
+      maxShield: 0,
       speed: this.hero.speed,
       weapons: [{ name: this.hero.weapon, icon: this.hero.weaponIcon }],
       items: [],
@@ -81,6 +84,7 @@ const Game = {
     ExpOrbs.clear();
     DamageNumbers.clear();
     Upgrade.resetRun();
+    Shield.refresh(this.player);
     Menu.hide();
     HUD.build();
     HUD.setWeapons(this.player.weapons);
