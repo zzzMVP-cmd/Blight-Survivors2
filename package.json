@@ -1,7 +1,7 @@
 {
   "name": "blight-survivors-2",
   "productName": "Blight Survivors 2",
-  "version": "0.3.8",
+  "version": "0.3.9",
   "description": "Blight Survivors 2 - 便携版桌面游戏",
   "private": true,
   "main": "electron/main.js",
