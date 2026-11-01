@@ -25,6 +25,7 @@ const Game = {
   MAX_ZOOM: 3,
 
   MAX_RENDER_MONSTERS: 100,
+  RENDER_SPACING: 1.5,
 
   init(canvas) {
     this.canvas = canvas;
@@ -192,7 +193,9 @@ const Game = {
     this.player.invTime = this.INV_DURATION;
   },
 
-  // 只渲染距离英雄最近的 MAX_RENDER_MONSTERS 只怪物
+  // 只渲染距离英雄最近的 MAX_RENDER_MONSTERS 只怪物。
+  // 按距离由近到远依次挑选，任意两只被选中怪物的中心距需 ≥ (r1+r2) × RENDER_SPACING，
+  // 过近的跳过并继续往后补足，避免同屏怪物叠在一起看不清。
   visibleMonsters() {
     const list = Wave.monsters;
     if (list.length <= this.MAX_RENDER_MONSTERS) return list;
@@ -205,7 +208,25 @@ const Game = {
       return { m, d: dx * dx + dy * dy };
     });
     scored.sort((a, b) => a.d - b.d);
-    return scored.slice(0, this.MAX_RENDER_MONSTERS).map((o) => o.m);
+
+    const picked = [];
+    for (const o of scored) {
+      if (picked.length >= this.MAX_RENDER_MONSTERS) break;
+
+      let ok = true;
+      for (const p of picked) {
+        const minDist = (p.radius + o.m.radius) * this.RENDER_SPACING;
+        const dx = p.x - o.m.x;
+        const dy = p.y - o.m.y;
+        if (dx * dx + dy * dy < minDist * minDist) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) picked.push(o.m);
+    }
+
+    return picked;
   },
 
   draw() {

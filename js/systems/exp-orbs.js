@@ -8,6 +8,7 @@ const ExpOrbs = {
   ATTRACT_SPEED: 300,
   BOB_SPEED: 3,
   BOB_AMP: 3,
+  MAX_RENDER: 100,
 
   spawn(x, y, exp) {
     this.orbs.push({
@@ -48,8 +49,23 @@ const ExpOrbs = {
     }
   },
 
+  // 只渲染距离英雄最近的 MAX_RENDER 个经验球
+  visibleOrbs() {
+    if (this.orbs.length <= this.MAX_RENDER) return this.orbs;
+
+    const px = Game.player.x;
+    const py = Game.player.y;
+    const scored = this.orbs.map((orb) => {
+      const dx = orb.x - px;
+      const dy = orb.y - py;
+      return { orb, d: dx * dx + dy * dy };
+    });
+    scored.sort((a, b) => a.d - b.d);
+    return scored.slice(0, this.MAX_RENDER).map((o) => o.orb);
+  },
+
   draw(ctx) {
-    for (const orb of this.orbs) {
+    for (const orb of this.visibleOrbs()) {
       const bobY = Math.sin(orb.time * this.BOB_SPEED) * this.BOB_AMP;
 
       ctx.save();
