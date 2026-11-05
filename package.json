@@ -1,13 +1,13 @@
 {
   "name": "blight-survivors-2",
   "productName": "Blight Survivors 2",
-  "version": "0.3.9",
-  "description": "Blight Survivors 2 - 便携版桌面游戏",
+  "version": "0.4.0",
+  "description": "Blight Survivors 2 - 桌面版游戏",
   "private": true,
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win portable"
+    "dist": "electron-builder --win"
   },
   "devDependencies": {
     "electron": "^33.2.0",
@@ -30,13 +30,21 @@
       "signAndEditExecutable": false,
       "target": [
         {
-          "target": "portable",
+          "target": "nsis",
           "arch": ["x64"]
         }
       ]
     },
-    "portable": {
-      "artifactName": "BlightSurvivors2_v${version}.exe"
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Blight Survivors 2",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "BlightSurvivors2_Setup_v${version}.exe"
     }
   }
 }

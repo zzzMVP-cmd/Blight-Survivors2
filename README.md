@@ -30,7 +30,7 @@ Blight Survivors2/
 ├─ electron/main.js      ← 桌面版窗口逻辑（Electron）
 ├─ assets/images/        ← 图片资源（warrior.png, weapon_warrior.png）
 ├─ package.json          ← 桌面版依赖与打包配置（electron-builder）
-├─ pack.bat              ← 打包脚本（构建便携版 exe → release\ 目录）
+├─ pack.bat              ← 打包脚本（构建 NSIS 安装版 → release\ 目录）
 ├─ clean.bat             ← 清理脚本（删除 release\、packed\、dist\）
 └─ README.md
 ```
@@ -72,15 +72,18 @@ Blight Survivors2/
 ### 网页版（开发调试）
 直接用浏览器打开 `index.html` 即可（纯静态，无需服务器）。
 
-### 桌面版（便携 exe）
-- **运行**：双击 `release\BlightSurvivors2_v0.3.9.exe` 即可，无需浏览器、无需安装，单独一个文件绿色运行。
+### 桌面版（安装 exe）
+- **运行**：双击 `release\BlightSurvivors2_Setup_v0.4.0.exe` 安装，安装后从桌面快捷方式或开始菜单启动（装到当前用户目录，不需要管理员权限）。
+- **为什么改成安装版**：便携单文件 exe 每次启动都要把约 268MB 的 Electron 运行时解压到系统临时目录，实测启动约 8.5~8.8s；安装版文件常驻硬盘，启动约 1~2s。
 - **可缩放窗口**：窗口支持自由缩放，最小尺寸 640×480。
-- **构建**：先 `npm install` 安装依赖，再运行 `pack.bat`（或 `npm run dist`），完成后 exe 位于 `release\` 目录。
+- **卸载**：设置 → 应用 → 「Blight Survivors 2」→ 卸载（不会删除游戏数据）。
+- **构建**：先 `npm install` 安装依赖，再运行 `pack.bat`（或 `npm run dist`），完成后安装包位于 `release\` 目录；免安装的文件夹版位于 `release\win-unpacked\`。
 
 ---
 
 ## 版本
 
+- **v0.4.0**：打包方式由「便携单文件 exe」改为「NSIS 安装版」，启动时间从约 8.7s 降至约 1~2s（不再每次解压 Electron 运行时）。
 - **v0.3.9**：经验球渲染上限（最近 100 个）+ 怪物渲染间距限制（中心距 ≥ (r1+r2)×1.5）。
 - **v0.3.8**：渲染数量上限（怪物最近 100 只、伤害数字最高 100 条）。
 - **v0.3.7**：新增护盾系统（怪物护盾环 + 英雄护盾条/护盾强化卡）+ 穿透改为「(血量+护盾)/体积」判定 + 怪物取消攻击间隔、无敌帧 0.5s。
