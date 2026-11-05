@@ -9,6 +9,7 @@ const ExpOrbs = {
   BOB_SPEED: 3,
   BOB_AMP: 3,
   MAX_RENDER: 100,
+  EXP_GROWTH: 1.4,
 
   spawn(x, y, exp) {
     this.orbs.push({
@@ -40,7 +41,7 @@ const ExpOrbs = {
         while (player.exp >= player.expNext) {
           player.exp -= player.expNext;
           player.level += 1;
-          player.expNext = Math.round(player.expNext * 1.5);
+          player.expNext = Math.round(player.expNext * this.EXP_GROWTH);
           Shield.refresh(player);
           Upgrade.show(player);
         }
