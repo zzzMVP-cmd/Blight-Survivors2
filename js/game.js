@@ -25,7 +25,6 @@ const Game = {
   MAX_ZOOM: 3,
 
   MAX_RENDER_MONSTERS: 100,
-  RENDER_SPACING: 1.5,
 
   init(canvas) {
     this.canvas = canvas;
@@ -193,37 +192,56 @@ const Game = {
     this.player.invTime = this.INV_DURATION;
   },
 
-  // 只渲染距离英雄最近的 MAX_RENDER_MONSTERS 只怪物。
-  // 按距离由近到远依次挑选，任意两只被选中怪物的中心距需 ≥ (r1+r2) × RENDER_SPACING，
-  // 过近的跳过并继续往后补足，避免同屏怪物叠在一起看不清。
+  // 逐圈筛选：第 n 圈的最小中心距 = (r1+r2) / n。
+  // 第一圈系数为 1（刚好贴边），筛完若不足 MAX_RENDER_MONSTERS 只，
+  // 就对剩下的怪物用 1/2 的系数再筛一圈，依此类推直到凑满或没有剩余怪物。
   visibleMonsters() {
     const list = Wave.monsters;
-    if (list.length <= this.MAX_RENDER_MONSTERS) return list;
+    if (list.length === 0) return list;
 
     const px = this.player.x;
     const py = this.player.y;
-    const scored = list.map((m) => {
+    let remaining = list.map((m) => {
       const dx = m.x - px;
       const dy = m.y - py;
       return { m, d: dx * dx + dy * dy };
     });
-    scored.sort((a, b) => a.d - b.d);
+    remaining.sort((a, b) => a.d - b.d);
 
     const picked = [];
-    for (const o of scored) {
-      if (picked.length >= this.MAX_RENDER_MONSTERS) break;
+    let round = 1;
+    while (picked.length < this.MAX_RENDER_MONSTERS && remaining.length > 0) {
+      const coef = 1 / round;
+      const next = [];
 
-      let ok = true;
-      for (const p of picked) {
-        const minDist = (p.radius + o.m.radius) * this.RENDER_SPACING;
-        const dx = p.x - o.m.x;
-        const dy = p.y - o.m.y;
-        if (dx * dx + dy * dy < minDist * minDist) {
-          ok = false;
-          break;
+      for (const o of remaining) {
+        if (picked.length >= this.MAX_RENDER_MONSTERS) {
+          next.push(o);
+          continue;
         }
+        let ok = true;
+        for (const p of picked) {
+          const minDist = (p.radius + o.m.radius) * coef;
+          const dx = p.x - o.m.x;
+          const dy = p.y - o.m.y;
+          if (dx * dx + dy * dy < minDist * minDist) {
+            ok = false;
+            break;
+          }
+        }
+        if (ok) picked.push(o.m);
+        else next.push(o);
       }
-      if (ok) picked.push(o.m);
+
+      // 本圈一个都没选上，说明剩下的已经挤到无法再分离，直接补满收尾
+      if (next.length === remaining.length) break;
+      remaining = next;
+      round++;
+    }
+
+    for (const o of remaining) {
+      if (picked.length >= this.MAX_RENDER_MONSTERS) break;
+      picked.push(o.m);
     }
 
     return picked;

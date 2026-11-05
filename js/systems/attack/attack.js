@@ -86,7 +86,7 @@ const DamageNumbers = {
     let color = isCrit ? this.CRIT_COLOR : Attack.DAMAGE_TYPES.sharp.color;
     if (pierce) color = this.PIERCE_COLOR;
 
-    this.items.push({
+    const item = {
       x: x + (Math.random() - 0.5) * 10,
       y: y,
       text: text,
@@ -94,7 +94,18 @@ const DamageNumbers = {
       color: color,
       timer: this.DURATION,
       maxTimer: this.DURATION
-    });
+    };
+
+    if (this.items.length < this.MAX_RENDER) {
+      this.items.push(item);
+      return;
+    }
+
+    let minIdx = 0;
+    for (let i = 1; i < this.items.length; i++) {
+      if (this.items[i].value < this.items[minIdx].value) minIdx = i;
+    }
+    if (value > this.items[minIdx].value) this.items[minIdx] = item;
   },
 
   update(dt) {
@@ -106,17 +117,9 @@ const DamageNumbers = {
     }
   },
 
-  // 只渲染数值最高的 MAX_RENDER 条，避免同屏数字过多拖慢帧率
-  visibleItems() {
-    if (this.items.length <= this.MAX_RENDER) return this.items;
-    return this.items
-      .slice()
-      .sort((a, b) => b.value - a.value)
-      .slice(0, this.MAX_RENDER);
-  },
-
+  // 数组在 add() 时已保证只保留数值最高的 MAX_RENDER 条，此处直接绘制
   draw(ctx) {
-    for (const d of this.visibleItems()) {
+    for (const d of this.items) {
       const alpha = Math.min(1, d.timer / (d.maxTimer * 0.4));
       ctx.save();
       ctx.globalAlpha = alpha;

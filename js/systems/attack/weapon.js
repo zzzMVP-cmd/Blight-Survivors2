@@ -64,7 +64,8 @@ const Weapon = {
       return;
     }
 
-    this.turnToward(this.moveAngle, dt);
+    // 不在攻击间隔内时不做缓慢转向，直接对准移动方向
+    this.angle = this.moveAngle;
   },
 
   turnToward(targetAngle, dt) {

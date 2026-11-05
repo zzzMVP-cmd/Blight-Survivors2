@@ -43,6 +43,8 @@ const ExpOrbs = {
           player.level += 1;
           player.expNext = Math.round(player.expNext * this.EXP_GROWTH);
           Shield.refresh(player);
+          player.hp = player.maxHp;
+          player.shield = player.maxShield;
           Upgrade.show(player);
         }
         this.orbs.splice(i, 1);

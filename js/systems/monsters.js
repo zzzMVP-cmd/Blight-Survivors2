@@ -40,9 +40,9 @@ const Monsters = {
     this.drawHpBar(ctx, m);
   },
 
-  // 护盾环：白偏色细圈，下部留缺口显示护盾值，护盾越少越透明
+  // 护盾环：白偏色细圈，下部留缺口显示护盾值，护盾越少越透明；护盾为 0 时整环不绘制
   drawShieldRing(ctx, m) {
-    if (m.maxShield <= 0) return;
+    if (m.maxShield <= 0 || m.shield <= 0) return;
 
     const ratio = Math.max(0, Math.min(1, m.shield / m.maxShield));
     const r = m.radius + 5;
