@@ -48,6 +48,7 @@ const Wave = {
     for (const m of this.monsters) {
       MonsterAI.move(m, dt);
     }
+    MonsterAI.separate(this.monsters);
     MonsterAI.processAttacks(this.monsters, dt);
 
     this.waveElapsed += dt;

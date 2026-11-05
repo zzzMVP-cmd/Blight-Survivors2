@@ -145,12 +145,16 @@ const Weapon = {
 
   findTarget(player, monsters) {
     let nearest = null;
-    let nearestDist = this.ATTACK_RANGE;
+    let nearestDist2 = this.ATTACK_RANGE * this.ATTACK_RANGE;
+    const px = player.x;
+    const py = player.y;
     for (const m of monsters) {
       if (m.hp <= 0) continue;
-      const d = Math.hypot(m.x - player.x, m.y - player.y);
-      if (d < nearestDist) {
-        nearestDist = d;
+      const dx = m.x - px;
+      const dy = m.y - py;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < nearestDist2) {
+        nearestDist2 = d2;
         nearest = m;
       }
     }

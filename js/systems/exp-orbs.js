@@ -28,7 +28,7 @@ const ExpOrbs = {
 
       const dx = player.x - orb.x;
       const dy = player.y - orb.y;
-      const dist = Math.hypot(dx, dy);
+      const dist = Math.sqrt(dx * dx + dy * dy);
 
       if (dist < this.ATTRACT_RANGE && dist > 0) {
         const speed = this.ATTRACT_SPEED * (1 - dist / this.ATTRACT_RANGE);
@@ -45,7 +45,7 @@ const ExpOrbs = {
           Shield.refresh(player);
           player.hp = player.maxHp;
           player.shield = player.maxShield;
-          Upgrade.show(player);
+          Upgrade.queue(player);
         }
         this.orbs.splice(i, 1);
       }

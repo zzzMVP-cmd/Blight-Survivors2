@@ -34,7 +34,7 @@ const Game = {
     const setKey = (code, down) => { this.keys[code] = down; };
     window.addEventListener('keydown', (e) => {
       setKey(e.code, true);
-      if (e.code === 'Escape' && this.running) {
+      if (e.code === 'Escape' && this.running && !Upgrade.showing) {
         if (this.paused) this.resume();
         else this.pause();
       }
@@ -108,13 +108,15 @@ const Game = {
       this.accumulator += elapsed;
 
       while (this.accumulator >= this.FIXED_DT) {
+        if (this.paused) break;
         this.fixedUpdate(this.FIXED_DT);
         this.accumulator -= this.FIXED_DT;
       }
-    }
 
-    this.draw();
-    HUD.update(this.player);
+      // 暂停时画面静止，跳过整帧绘制与 HUD 写入
+      this.draw();
+      HUD.update(this.player);
+    }
 
     this.rafId = requestAnimationFrame((tt) => this.loop(tt));
   },
@@ -150,12 +152,19 @@ const Game = {
     Weapon.setMoveAngle(dx, dy);
   },
 
+  // 单次遍历完成「掉落经验 + 原地压缩存活列表」，避免每帧分配两个新数组
   processKills() {
-    const dead = Wave.monsters.filter(m => m.hp <= 0);
-    for (const m of dead) {
-      ExpOrbs.spawn(m.x, m.y, m.maxHp);
+    const list = Wave.monsters;
+    let write = 0;
+    for (let i = 0; i < list.length; i++) {
+      const m = list[i];
+      if (m.hp <= 0) {
+        ExpOrbs.spawn(m.x, m.y, m.maxHp);
+      } else {
+        list[write++] = m;
+      }
     }
-    Wave.monsters = Wave.monsters.filter(m => m.hp > 0);
+    list.length = write;
   },
 
   pause() {
@@ -165,6 +174,7 @@ const Game = {
 
   resume() {
     this.paused = false;
+    this.accumulator = 0;
     this.lastTime = performance.now();
     Menu.hidePause();
   },
@@ -183,6 +193,7 @@ const Game = {
 
   resumeFromUpgrade() {
     this.paused = false;
+    this.accumulator = 0;
     this.lastTime = performance.now();
   },
 

@@ -20,9 +20,14 @@ const Attack = {
 
         const dx = m.x - arc.playerX;
         const dy = m.y - arc.playerY;
-        const dist = Math.hypot(dx, dy);
+        const reach = arc.radius + m.radius;
 
-        if (dist < arc.radius + m.radius) {
+        // 轴对齐包围盒快速剔除：远处怪物只做两次绝对值比较，不做开方
+        if (dx > reach || dx < -reach || dy > reach || dy < -reach) continue;
+
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < reach) {
           const angleToM = Math.atan2(dy, dx);
           const diff = this.normalizeAngle(angleToM - arc.facingAngle);
           if (Math.abs(diff) < arc.swingAngle / 2) {

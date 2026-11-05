@@ -16,9 +16,22 @@
   - 移除每帧排序的 `visibleItems()`，绘制直接遍历数组，高波数下开销更低。
 - 升级时血量与护盾直接加满（`ExpOrbs` 升级循环内 `hp = maxHp`、`shield = maxShield`）。
 - 剑的缓慢转向只在攻击间隔（`cooldown`）内生效；`idle` 状态不再缓慢转向，直接对准移动方向。
+- 新增怪物分离力（`MonsterAI.separate`）：互相重叠的怪物沿连线推开，不再全部堆叠在英雄身上。
+  - 用空间网格（格子 48px）把邻居查找限制在相邻 9 格内，按「本格 → 上下左右 → 对角」由近到远扫描，每只怪物最多扫描 24 个候选、命中 12 个重叠邻居，避免 O(n²)。
+  - 分离速度 150px/s，单帧位移不超过 150 × 0.02 = 3px。
+- 连升多级时改为「排队选卡」：`Upgrade.queue()` 累计待选次数，`Upgrade.finishPick()` 选完一张后若仍有排队则继续弹出，全部选完才恢复游戏。
+  - 修复连升多级时只有最后一次 `Upgrade.show()` 生效、前几次强化机会被吞掉的问题。
+
+### 性能
+- HUD 只在数值变化时写入 DOM（`HUD.cache`），避免每帧 7 次 DOM 写入触发重排/重绘。
+- 暂停（ESC 暂停、升级选卡）时跳过整帧绘制与 HUD 更新；`while` 循环内检测到暂停立即中断，`resume`/`resumeFromUpgrade` 重置累加器。
+- 挥剑判定先做轴对齐包围盒剔除（`|dx| > reach || |dy| > reach` 直接跳过），远处怪物不再参与开方。
+- `Weapon.findTarget` 改为平方距离比较；`MonsterAI.move`、`processAttacks`、`ExpOrbs.update` 的 `Math.hypot` 改为 `Math.sqrt(dx*dx+dy*dy)`。
+- `Game.processKills` 改为单次遍历原地压缩，不再每帧分配两个新数组。
 
 ### 修复
 - 怪物护盾为 0 时仍会绘制护盾环与「0」数值，现改为整环与数值一起不绘制。
+- 选卡界面打开时按 ESC 不再触发暂停（避免暂停后恢复导致怪物在选卡时继续行动）。
 
 ---
 

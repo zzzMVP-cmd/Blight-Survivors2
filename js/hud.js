@@ -14,6 +14,9 @@ const HUD = {
   weaponBar: null,
   itemBar: null,
 
+  // 上一次写入 DOM 的值，只有变化时才写，避免每帧 7 次 DOM 写入触发重排
+  cache: null,
+
   // 构建 HUD 结构
   build() {
     if (this.root) this.root.remove();
@@ -44,6 +47,7 @@ const HUD = {
     this.waveText = this.root.querySelector('.wave-text');
     this.weaponBar = this.root.querySelector('.weapon-bar');
     this.itemBar = this.root.querySelector('.item-bar');
+    this.cache = {};
   },
 
   // 按获得顺序设置武器栏
@@ -60,33 +64,66 @@ const HUD = {
     });
   },
 
-  // 更新血条、等级、经验条
+  // 更新血条、等级、经验条（只在数值变化时写入 DOM）
   update(player) {
-    const pct = player.maxHp > 0
-      ? Math.max(0, Math.min(100, (player.hp / player.maxHp) * 100))
-      : 0;
-    if (this.hpFill) this.hpFill.style.width = pct + '%';
-    if (this.hpText) this.hpText.textContent = Math.ceil(player.hp) + ' / ' + player.maxHp;
+    if (!this.root || !this.cache) return;
+    const c = this.cache;
 
-    const shieldPct = player.maxShield > 0
-      ? Math.max(0, Math.min(100, (player.shield / player.maxShield) * 100))
+    const hpPct = player.maxHp > 0
+      ? Math.max(0, Math.min(100, Math.round((player.hp / player.maxHp) * 1000) / 10))
       : 0;
-    if (this.shieldFill) this.shieldFill.style.width = shieldPct + '%';
-    if (this.shieldBar) this.shieldBar.classList.toggle('hidden', player.maxShield <= 0);
-    if (this.shieldText) {
-      this.shieldText.textContent = player.maxShield > 0
-        ? Math.ceil(player.shield) + ' / ' + player.maxShield
-        : '';
+    if (hpPct !== c.hpPct) {
+      c.hpPct = hpPct;
+      if (this.hpFill) this.hpFill.style.width = hpPct + '%';
     }
 
-    if (this.levelText) this.levelText.textContent = 'lv.' + player.level;
+    const hpText = Math.ceil(player.hp) + ' / ' + player.maxHp;
+    if (hpText !== c.hpText) {
+      c.hpText = hpText;
+      if (this.hpText) this.hpText.textContent = hpText;
+    }
+
+    const shieldPct = player.maxShield > 0
+      ? Math.max(0, Math.min(100, Math.round((player.shield / player.maxShield) * 1000) / 10))
+      : 0;
+    if (shieldPct !== c.shieldPct) {
+      c.shieldPct = shieldPct;
+      if (this.shieldFill) this.shieldFill.style.width = shieldPct + '%';
+    }
+
+    const noShield = player.maxShield <= 0;
+    if (noShield !== c.noShield) {
+      c.noShield = noShield;
+      if (this.shieldBar) this.shieldBar.classList.toggle('hidden', noShield);
+    }
+
+    const shieldText = player.maxShield > 0
+      ? Math.ceil(player.shield) + ' / ' + player.maxShield
+      : '';
+    if (shieldText !== c.shieldText) {
+      c.shieldText = shieldText;
+      if (this.shieldText) this.shieldText.textContent = shieldText;
+    }
+
+    const levelText = 'lv.' + player.level;
+    if (levelText !== c.levelText) {
+      c.levelText = levelText;
+      if (this.levelText) this.levelText.textContent = levelText;
+    }
 
     const expPct = player.expNext > 0
-      ? Math.max(0, Math.min(100, (player.exp / player.expNext) * 100))
+      ? Math.max(0, Math.min(100, Math.round((player.exp / player.expNext) * 1000) / 10))
       : 0;
-    if (this.expFill) this.expFill.style.width = expPct + '%';
+    if (expPct !== c.expPct) {
+      c.expPct = expPct;
+      if (this.expFill) this.expFill.style.width = expPct + '%';
+    }
 
-    if (this.waveText) this.waveText.textContent = Wave.getStatus();
+    const waveText = Wave.getStatus();
+    if (waveText !== c.waveText) {
+      c.waveText = waveText;
+      if (this.waveText) this.waveText.textContent = waveText;
+    }
   },
 
   hide() {

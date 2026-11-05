@@ -15,6 +15,10 @@ const Upgrade = {
   refreshCount: 1,
   cardCount: 5,
 
+  // 连升多级时排队，一次升级一次选卡
+  pending: 0,
+  showing: false,
+
   radiantComp: 0,
 
   TIER_NAMES: ['铜', '银', '金', '炫彩'],
@@ -65,15 +69,36 @@ const Upgrade = {
     this.refreshCount = this.BASE_REFRESH;
     this.cardCount = this.BASE_CARDS;
     this.radiantComp = 0;
+    this.pending = 0;
+    this.showing = false;
+  },
+
+  // 每次升级调用一次：入队，未在选卡时才立即弹出
+  queue(player) {
+    this.pending += 1;
+    if (!this.showing) this.show(player);
   },
 
   show(player) {
+    this.showing = true;
     this.refreshCount = this.BASE_REFRESH + this.refreshBonus;
     this.cardCount = this.BASE_CARDS + this.cardBonus;
     this.overlay.classList.remove('hidden');
     this.updateRefreshBtn();
     this.generateCards(player);
     Game.pauseForUpgrade();
+  },
+
+  // 选完一张卡：还有排队的升级就继续弹，否则关闭并恢复游戏
+  finishPick(player) {
+    this.pending -= 1;
+    if (this.pending > 0) {
+      this.show(player);
+      return;
+    }
+    this.showing = false;
+    this.hide();
+    Game.resumeFromUpgrade();
   },
 
   hide() {
@@ -355,8 +380,7 @@ const Upgrade = {
 
     el.addEventListener('click', () => {
       card.apply();
-      this.hide();
-      Game.resumeFromUpgrade();
+      this.finishPick(player);
     });
 
     return el;
