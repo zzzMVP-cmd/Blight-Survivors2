@@ -40,8 +40,8 @@ const Attack = {
 
             if (m.shield > 0) dmg = dmg / m.shield;
 
-            const volume = Math.PI * Math.pow(m.radius, 3);
-            const threshold = (m.hp + m.shield) / volume;
+            const area = Math.PI * m.radius * m.radius;
+            const threshold = (m.maxHp + m.shield) / area;
             const pierce = dmg > threshold;
             if (pierce) {
               dmg = dmg * (1 + this.PIERCE_MULT_PER_LEVEL * Math.max(1, player.level));
