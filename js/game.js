@@ -46,6 +46,19 @@ const Game = {
       const factor = e.deltaY > 0 ? 0.92 : 1.08;
       this.zoom = Math.max(this.MIN_ZOOM, Math.min(this.MAX_ZOOM, this.zoom * factor));
     }, { passive: false });
+
+    // 蓄力：画布上按下左键进入蓄力，松开结束（暂停中松手不取消，恢复后才结算）
+    canvas.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      if (!this.running || this.paused || Upgrade.showing) return;
+      Charge.start();
+    });
+    window.addEventListener('mouseup', (e) => {
+      if (e.button !== 0) return;
+      if (!this.running || !Charge.holding) return;
+      if (Upgrade.showing) { Charge.reset(); return; }
+      Charge.end(this.player, Wave.monsters);
+    });
   },
 
   start(heroKey) {
@@ -83,6 +96,7 @@ const Game = {
     this.hitFlashTime = 0;
     this.accumulator = 0;
     Weapon.init(this.hero);
+    Charge.reset();
     ExpOrbs.clear();
     DamageNumbers.clear();
     Upgrade.resetRun();
@@ -129,6 +143,7 @@ const Game = {
     this.updatePlayer(dt);
     Recovery.update(dt, this.player);
     Wave.update(dt);
+    Charge.update(dt);
     Weapon.update(dt, this.player, Wave.monsters);
     Attack.processWarrior(this.player, Weapon, Wave.monsters);
     this.processKills();
@@ -182,6 +197,7 @@ const Game = {
   retreat() {
     this.running = false;
     this.paused = false;
+    Charge.reset();
     Menu.hidePause();
     HUD.hide();
     Menu.show();
@@ -189,6 +205,7 @@ const Game = {
 
   pauseForUpgrade() {
     this.paused = true;
+    Charge.reset();
   },
 
   resumeFromUpgrade() {
@@ -295,6 +312,7 @@ const Game = {
     }
 
     Weapon.draw(ctx, this.player);
+    Charge.draw(ctx, this.player);
     ExpOrbs.draw(ctx);
     DamageNumbers.draw(ctx);
 

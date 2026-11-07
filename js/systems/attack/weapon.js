@@ -15,6 +15,14 @@ const Weapon = {
   swingStartAngle: 0,
   cooldownTimer: 0,
 
+  // 连续攻击：挥砍方向左右交替，连续攻击数决定一个循环内挥砍几次
+  SWING_COUNT: 4,
+  swingDir: -1,
+
+  // 蓄力松手后补的那一刀携带的攻击次数（0 = 挥空，不造成伤害）
+  chargedAttack: false,
+  chargeCount: 0,
+
   arcs: [],
 
   SWORD_LENGTH: 40,
@@ -32,7 +40,12 @@ const Weapon = {
     this.angle = 0;
     this.moveAngle = 0;
     this.target = null;
+    this.targetX = 0;
+    this.targetY = 0;
     this.arcs = [];
+    this.swingDir = -1;
+    this.chargedAttack = false;
+    this.chargeCount = 0;
     this.SWORD_LENGTH = heroData.swordLength || 40;
     this.ATTACK_RANGE = heroData.attackRange || 120;
     this.ATTACK_INTERVAL = heroData.attackInterval || 0.8;
@@ -40,11 +53,53 @@ const Weapon = {
     this.SWING_ANGLE = heroData.swingAngle || Math.PI / 2;
   },
 
+  // 距离下一次攻击完成还需要的时间（用于蓄力条第 1 个长方形的到达时间）
+  remainingInterval() {
+    switch (this.state) {
+      case 'aiming': return Math.max(0, this.aimTimer) + this.SWING_DURATION;
+      case 'swinging': return Math.max(0, this.swingTimer);
+      case 'cooldown': return Math.max(0, this.cooldownTimer) + this.AIM_DURATION + this.SWING_DURATION;
+      default: return 0;
+    }
+  },
+
+  // 蓄力松开：立即进入瞄准，下一刀按 count 次攻击合并结算
+  // 返回 false 表示攻击范围内没有可攻击目标，攻击判定不会生效，本次不挥砍
+  startChargedAttack(player, monsters, count) {
+    const target = this.findTarget(player, monsters, true);
+    if (!target) return false;
+
+    this.chargedAttack = true;
+    this.chargeCount = count;
+    this.target = target;
+    this.targetAngle = Math.atan2(target.y - player.y, target.x - player.x);
+    this.targetX = target.x;
+    this.targetY = target.y;
+
+    this.state = 'aiming';
+    this.aimTimer = this.AIM_DURATION;
+    return true;
+  },
+
+  // 蓄力结束但没有打出攻击（蓄力值作废）：攻击间隔视为 0，武器立即回到待机可再攻击
+  readyNow() {
+    this.chargedAttack = false;
+    this.chargeCount = 0;
+    this.target = null;
+    this.state = 'idle';
+    this.aimTimer = 0;
+    this.swingTimer = 0;
+    this.cooldownTimer = 0;
+  },
+
   update(dt, player, monsters) {
     for (let i = this.arcs.length - 1; i >= 0; i--) {
       this.arcs[i].timer -= dt;
       if (this.arcs[i].timer <= 0) this.arcs.splice(i, 1);
     }
+
+    // 蓄力期间冻结攻击状态机：不挥砍、不推进攻击间隔
+    if (Charge.holding) return;
 
     switch (this.state) {
       case 'idle': this.updateIdle(dt, player, monsters); break;
@@ -90,14 +145,14 @@ const Weapon = {
       this.angle = this.targetAngle;
       this.state = 'swinging';
       this.swingTimer = this.SWING_DURATION;
-      this.swingStartAngle = this.angle - this.SWING_ANGLE / 2;
+      this.swingStartAngle = this.angle - this.swingDir * (this.SWING_ANGLE / 2);
     }
   },
 
   updateSwinging(dt, player, monsters) {
     this.swingTimer -= dt;
     const progress = 1 - Math.max(0, this.swingTimer) / this.SWING_DURATION;
-    this.angle = this.swingStartAngle + progress * this.SWING_ANGLE;
+    this.angle = this.swingStartAngle + this.swingDir * progress * this.SWING_ANGLE;
 
     if (this.target && this.target.hp > 0) {
       this.targetX = this.target.x;
@@ -117,8 +172,15 @@ const Weapon = {
         radius: this.ATTACK_RANGE,
         timer: this.ARC_DURATION,
         maxTimer: this.ARC_DURATION,
-        hitSet: new Set()
+        hitSet: new Set(),
+        charged: this.chargedAttack,
+        chargeCount: this.chargeCount
       });
+
+      // 连续攻击：下一刀反向挥出，形成 右→左 / 左→右 的交替循环
+      this.swingDir = -this.swingDir;
+      this.chargedAttack = false;
+      this.chargeCount = 0;
 
       this.state = 'cooldown';
       this.cooldownTimer = Math.max(0, this.ATTACK_INTERVAL - this.AIM_DURATION - this.SWING_DURATION);
@@ -143,17 +205,20 @@ const Weapon = {
     }
   },
 
-  findTarget(player, monsters) {
+  // 找最近的存活怪物。withRadius 为 true 时把怪物半径计入攻击距离，
+  // 与 Attack.processWarrior 的扇形判定（reach = 攻击范围 + 怪物半径）保持一致
+  findTarget(player, monsters, withRadius) {
     let nearest = null;
-    let nearestDist2 = this.ATTACK_RANGE * this.ATTACK_RANGE;
+    let nearestDist2 = Infinity;
     const px = player.x;
     const py = player.y;
     for (const m of monsters) {
       if (m.hp <= 0) continue;
+      const reach = this.ATTACK_RANGE + (withRadius ? m.radius : 0);
       const dx = m.x - px;
       const dy = m.y - py;
       const d2 = dx * dx + dy * dy;
-      if (d2 < nearestDist2) {
+      if (d2 < reach * reach && d2 < nearestDist2) {
         nearestDist2 = d2;
         nearest = m;
       }
@@ -188,6 +253,12 @@ const Weapon = {
     ctx.rotate(this.angle);
     ctx.translate(0, player.r);
 
+    // 蓄力满：武器整体泛金光
+    if (Charge.isFull()) {
+      ctx.shadowColor = '#ffd76e';
+      ctx.shadowBlur = 16;
+    }
+
     ctx.fillStyle = '#6b3a1f';
     ctx.fillRect(0, -2.5, 10, 5);
 
@@ -198,7 +269,7 @@ const Weapon = {
     const tipLen = this.SWORD_LENGTH * 0.25;
     const bladeW = 3.5;
 
-    ctx.fillStyle = '#d8d8d8';
+    ctx.fillStyle = Charge.isFull() ? '#ffe9a8' : '#d8d8d8';
     ctx.fillRect(10, -bladeW, bladeLen, bladeW * 2);
 
     ctx.beginPath();

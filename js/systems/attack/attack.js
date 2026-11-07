@@ -14,6 +14,9 @@ const Attack = {
 
   processWarrior(player, weapon, monsters) {
     for (const arc of weapon.arcs) {
+      // 蓄力把多次攻击合并为一次：伤害先求和（不经过暴击），再统一判定暴击、穿透
+      const attackTimes = arc.charged ? arc.chargeCount : 1;
+
       for (const m of monsters) {
         if (arc.hitSet.has(m)) continue;
         if (m.hp <= 0) continue;
@@ -31,7 +34,7 @@ const Attack = {
           const angleToM = Math.atan2(dy, dx);
           const diff = this.normalizeAngle(angleToM - arc.facingAngle);
           if (Math.abs(diff) < arc.swingAngle / 2) {
-            let dmg = Augment.calcDamage(player, weapon.DAMAGE);
+            let dmg = Augment.calcDamage(player, weapon.DAMAGE * attackTimes);
             const isCrit = Crit.check(player);
             if (isCrit) dmg = Crit.calcDamage(player, dmg);
 

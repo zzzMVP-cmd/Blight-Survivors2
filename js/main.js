@@ -10,6 +10,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   Menu.init();
   Upgrade.init();
+  Charge.init();
 });
 
 function resizeCanvas() {
