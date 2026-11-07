@@ -25,8 +25,8 @@ const Upgrade = {
   TIER_COLORS: ['#cd7f32', '#c0c0c0', '#ffd700', '#ff69b4'],
   TIER_PROBS: [0.42, 0.32, 0.22, 0.04],
 
-  HP_MULTS: [1.2, 1.4, 1.8, 2.6],
-  SHIELD_MULTS: [1.2, 1.4, 1.8, 2.6],
+  HP_MULTS: [1.3, 1.6, 2.2, 3.4],
+  SHIELD_MULTS: [1.3, 1.6, 2.2, 3.4],
   SPD_MULTS: [1.1, 1.2, 1.4, 1.8],
   SPD_CAP: 400,
 
