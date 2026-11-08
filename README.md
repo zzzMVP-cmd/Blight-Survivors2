@@ -83,6 +83,7 @@ Blight Survivors2/
 ├─ pack.bat                   ← 打包脚本（构建 NSIS 安装版 → release\）
 ├─ clean.bat                  ← 清理脚本（删除 release\、packed\、dist\）
 ├─ CHANGELOG.md               ← 完整更新日志
+├─ LICENSE                    ← 许可证（CC BY-NC-SA 4.0）
 └─ README.md
 ```
 
@@ -107,3 +108,13 @@ npm run dist      # 或直接双击 pack.bat
 ## 版本
 
 当前版本 **v0.5.2**。完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
+
+---
+
+## 许可证
+
+本项目采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hans)（署名-非商业性使用-相同方式共享 4.0 国际）许可，详见 [LICENSE](LICENSE)。
+
+- **署名（BY）**：转载或改编需注明作者与来源，并标明是否修改
+- **非商业性使用（NC）**：不得将本作品用于商业目的
+- **相同方式共享（SA）**：改编作品需以相同许可证分发

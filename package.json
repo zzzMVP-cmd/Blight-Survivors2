@@ -3,6 +3,7 @@
   "productName": "Blight Survivors 2",
   "version": "0.5.2",
   "description": "Blight Survivors 2 - 桌面版游戏",
+  "license": "CC-BY-NC-SA-4.0",
   "private": true,
   "main": "electron/main.js",
   "scripts": {
