@@ -2,7 +2,7 @@
 
 [Blight Survivors](https://github.com/zzzMVP-cmd/Blight-Survivors) 的二作。
 
-原作代码无法继续改动且未工程化，本作彻底重做，采用模块化工程结构，纯静态 HTML/CSS/JS，无需构建即可运行。
+原作代码无法继续改动且未工程化，本作彻底重做，采用模块化工程结构（HTML/CSS/原生 JS + Electron 桌面封装）。
 
 ---
 
@@ -45,12 +45,6 @@
 
 ## 运行
 
-### 网页版
-
-直接用浏览器打开 `index.html` 即可，纯静态，无需服务器。
-
-### 桌面版
-
 - **安装**：双击 `release\BlightSurvivors2_Setup_v0.5.2.exe`，装到当前用户目录，不需要管理员权限。
 - **启动**：桌面快捷方式或开始菜单。
 - **卸载**：设置 → 应用 → 「Blight Survivors 2」。
@@ -62,7 +56,6 @@
 
 ```
 Blight Survivors2/
-├─ index.html                 ← 绘制层（canvas），按依赖顺序引用 js，不合并
 ├─ css/style.css              ← 全部样式
 ├─ js/
 │  ├─ systems/
