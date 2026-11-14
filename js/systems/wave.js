@@ -4,6 +4,7 @@
 // 每波数量、血量、伤害均为上波的 1.2 倍（四舍五入）。
 // 同屏存活怪物上限 MAX_ALIVE：超出部分进 spawnQueue 排队，每死一只补刷一只，
 // 直到队列清空才判定本波清场（排队数跨波累积，不会丢弃，经验总量不减少）。
+// 上限同时承担「渲染上限」的作用：不再有独立的渲染筛选，场上每一只都会被绘制。
 const Wave = {
   state: 'prepare',
   countdown: 0,
@@ -21,7 +22,7 @@ const Wave = {
   INTERVAL: 15,
   CLEAR_BONUS: 1,
   SCALE: 1.2,
-  MAX_ALIVE: 700,
+  MAX_ALIVE: 350,
 
   BASE_COUNT: 4,
   BASE_HP: 30,

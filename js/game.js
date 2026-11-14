@@ -24,8 +24,6 @@ const Game = {
   MIN_ZOOM: 0.3,
   MAX_ZOOM: 3,
 
-  MAX_RENDER_MONSTERS: 100,
-
   init(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
@@ -220,59 +218,22 @@ const Game = {
     this.player.invTime = this.INV_DURATION;
   },
 
-  // 逐圈筛选：第 n 圈的最小中心距 = (r1+r2) / n。
-  // 第一圈系数为 1（刚好贴边），筛完若不足 MAX_RENDER_MONSTERS 只，
-  // 就对剩下的怪物用 1/2 的系数再筛一圈，依此类推直到凑满或没有剩余怪物。
-  visibleMonsters() {
+  // 场上每一只怪物都会被绘制，不再有渲染数量上限（同屏总量由 Wave.MAX_ALIVE 控制）。
+  // 按距玩家的距离从远到近排序：远处的先画，近处的后画压在上面，重叠时层次正确。
+  renderMonsters() {
     const list = Wave.monsters;
     if (list.length === 0) return list;
 
     const px = this.player.x;
     const py = this.player.y;
-    let remaining = list.map((m) => {
+    const order = list.map((m) => {
       const dx = m.x - px;
       const dy = m.y - py;
       return { m, d: dx * dx + dy * dy };
     });
-    remaining.sort((a, b) => a.d - b.d);
+    order.sort((a, b) => b.d - a.d);
 
-    const picked = [];
-    let round = 1;
-    while (picked.length < this.MAX_RENDER_MONSTERS && remaining.length > 0) {
-      const coef = 1 / round;
-      const next = [];
-
-      for (const o of remaining) {
-        if (picked.length >= this.MAX_RENDER_MONSTERS) {
-          next.push(o);
-          continue;
-        }
-        let ok = true;
-        for (const p of picked) {
-          const minDist = (p.radius + o.m.radius) * coef;
-          const dx = p.x - o.m.x;
-          const dy = p.y - o.m.y;
-          if (dx * dx + dy * dy < minDist * minDist) {
-            ok = false;
-            break;
-          }
-        }
-        if (ok) picked.push(o.m);
-        else next.push(o);
-      }
-
-      // 本圈一个都没选上，说明剩下的已经挤到无法再分离，直接补满收尾
-      if (next.length === remaining.length) break;
-      remaining = next;
-      round++;
-    }
-
-    for (const o of remaining) {
-      if (picked.length >= this.MAX_RENDER_MONSTERS) break;
-      picked.push(o.m);
-    }
-
-    return picked;
+    return order.map((o) => o.m);
   },
 
   draw() {
@@ -295,7 +256,7 @@ const Game = {
     ctx.scale(this.zoom, this.zoom);
     ctx.translate(-w / 2 + camX, -h / 2 + camY);
 
-    for (const m of this.visibleMonsters()) {
+    for (const m of this.renderMonsters()) {
       Monsters.draw(ctx, m);
     }
 

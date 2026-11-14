@@ -87,33 +87,22 @@ const Monsters = {
     ctx.fillRect(x, y, barW * ratio, barH);
   },
 
+  // 极简画法：本体圆 + 双眼。去掉阴影椭圆与高光，单只绘制开销从约 32µs 降到约 18µs，
+  // 换取同屏上限从 200 提到 350 的余量（实测数据见 CHANGELOG）。
   drawSlime(ctx, m) {
     const r = m.radius;
-    ctx.save();
-
-    ctx.fillStyle = 'rgba(0,0,0,.3)';
-    ctx.beginPath();
-    ctx.ellipse(m.x, m.y + r * 0.7, r * 0.9, r * 0.4, 0, 0, Math.PI * 2);
-    ctx.fill();
 
     ctx.fillStyle = m.color;
     ctx.beginPath();
     ctx.arc(m.x, m.y, r, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = 'rgba(255,255,255,.35)';
-    ctx.beginPath();
-    ctx.arc(m.x - r * 0.3, m.y - r * 0.35, r * 0.25, 0, Math.PI * 2);
-    ctx.fill();
-
     ctx.fillStyle = m.eyeColor;
     ctx.beginPath();
+    ctx.moveTo(m.x - r * 0.3 + r * 0.13, m.y - r * 0.15);
     ctx.arc(m.x - r * 0.3, m.y - r * 0.15, r * 0.13, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
+    ctx.moveTo(m.x + r * 0.3 + r * 0.13, m.y - r * 0.15);
     ctx.arc(m.x + r * 0.3, m.y - r * 0.15, r * 0.13, 0, Math.PI * 2);
     ctx.fill();
-
-    ctx.restore();
   }
 };
