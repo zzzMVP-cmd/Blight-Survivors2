@@ -26,7 +26,7 @@ const Wave = {
   EXTENSION: 30,
   CLEAR_BONUS: 1,
   SCALE: 1.2,
-  MAX_ALIVE: 150,
+  MAX_ALIVE: 200,
 
   BASE_COUNT: 4,
   BASE_HP: 30,

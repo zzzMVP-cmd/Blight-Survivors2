@@ -135,7 +135,8 @@ const Upgrade = {
     });
   },
 
-  // 武器强化方向。每个方向可强化 4 次，第 4 次是名义上的「小质变」：机制不变，只是卡片发黄光。
+  // 武器强化方向。每个方向可强化 4 次，第 4 次是「小质变」：卡片发黄光；若有 mutDesc/mutApply
+  // 则数值比前几次更大（如崩山击退 +80、淬刃伤害 +2），缺省则与普通效果相同。
   // 4 次用完后该方向不再出现在卡池；所有方向都用完后，大质变进入卡池且可无限次获取。
   WEAPON_UPG: {
     warrior: [
@@ -155,13 +156,17 @@ const Upgrade = {
         key: 'knockback',
         name: '崩山',
         desc: '击退速度 +50',
-        apply(player) { player.knockbackSpeed += 50; }
+        mutDesc: '击退速度 +80',
+        apply(player) { player.knockbackSpeed += 50; },
+        mutApply(player) { player.knockbackSpeed += 80; }
       },
       {
         key: 'sharp',
         name: '淬刃',
         desc: '锐器伤基础伤害 +1',
-        apply(player) { Weapon.DAMAGE += 1; }
+        mutDesc: '锐器伤基础伤害 +2',
+        apply(player) { Weapon.DAMAGE += 1; },
+        mutApply(player) { Weapon.DAMAGE += 2; }
       }
     ]
   },
@@ -232,9 +237,9 @@ const Upgrade = {
       name: hero.weapon + '·' + dir.name,
       tier: -1,
       glow: isMut,
-      desc: dir.desc + '\n第 ' + next + '/' + this.UPG_MAX + ' 次',
+      desc: (isMut && dir.mutDesc ? dir.mutDesc : dir.desc) + '\n第 ' + next + '/' + this.UPG_MAX + ' 次',
       apply() {
-        dir.apply(player);
+        (isMut && dir.mutApply ? dir.mutApply : dir.apply)(player);
         player.weaponUpg[dir.key] = next;
       }
     };

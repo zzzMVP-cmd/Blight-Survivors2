@@ -49,7 +49,7 @@
 
 ## 运行
 
-- **安装**：双击 `release\BlightSurvivors2_Setup_v0.6.1.exe`，装到当前用户目录，不需要管理员权限。
+- **安装**：双击 `release\BlightSurvivors2_Setup_v0.6.3.exe`，装到当前用户目录，不需要管理员权限。
 - **启动**：桌面快捷方式或开始菜单。
 - **卸载**：设置 → 应用 → 「Blight Survivors 2」。
 - **窗口**：支持自由缩放，最小 640×480。
@@ -102,7 +102,7 @@ npm run dist      # 或直接双击 pack.bat
 
 产物：
 
-- `release\BlightSurvivors2_Setup_v0.6.1.exe` —— NSIS 安装版
+- `release\BlightSurvivors2_Setup_v0.6.3.exe` —— NSIS 安装版
 - `release\win-unpacked\` —— 免安装文件夹版
 
 清理临时产物：双击 `clean.bat`。
@@ -111,7 +111,7 @@ npm run dist      # 或直接双击 pack.bat
 
 ## 版本
 
-当前版本 **v0.6.1**。完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
+当前版本 **v0.6.3**。完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
 
 ---
 
