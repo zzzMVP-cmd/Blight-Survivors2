@@ -49,7 +49,7 @@ const MonsterAI = {
   // 分离力：把互相重叠的怪物沿连线推开，避免全部堆叠在英雄身上。
   // 用空间网格（48px 格子）把邻居查找限制在相邻 9 格内，按「本格 → 上下左右 → 对角」
   // 由近到远扫描，每只最多扫描 24 个候选、命中 12 个重叠邻居，避免 O(n²)。
-  SEPARATION_SPEED: 150,
+  SEPARATION_SPEED: 50,
   CELL_SIZE: 48,
   MAX_NEIGHBORS: 12,
   MAX_SCAN: 24,

@@ -31,6 +31,7 @@ const Game = {
     this.keys = {};
     const setKey = (code, down) => { this.keys[code] = down; };
     window.addEventListener('keydown', (e) => {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
       setKey(e.code, true);
       if (e.code === 'Escape' && this.running && !Upgrade.showing) {
         if (this.paused) this.resume();
@@ -88,7 +89,13 @@ const Game = {
       displaySpeedAug: 1,
       displayPowerAug: 1,
       overflowDmgMult: 1,
-      effectiveInterval: this.hero.attackInterval
+      effectiveInterval: this.hero.attackInterval,
+      // 钝器伤基础值：由破阵斩的大质变累积
+      bluntDamage: 0,
+      // 击退速度：基础值来自 Attack.KNOCKBACK_SPEED，可被武器强化提升
+      knockbackSpeed: Attack.KNOCKBACK_SPEED,
+      // 武器强化各方向已选次数（key 见 Upgrade.WEAPON_UPG）
+      weaponUpg: {}
     };
     this.shakeTime = 0;
     this.hitFlashTime = 0;
@@ -151,10 +158,10 @@ const Game = {
 
   updatePlayer(dt) {
     let dx = 0, dy = 0;
-    if (this.keys['KeyW']) dy -= 1;
-    if (this.keys['KeyS']) dy += 1;
-    if (this.keys['KeyA']) dx -= 1;
-    if (this.keys['KeyD']) dx += 1;
+    if (this.keys['KeyW'] || this.keys['ArrowUp']) dy -= 1;
+    if (this.keys['KeyS'] || this.keys['ArrowDown']) dy += 1;
+    if (this.keys['KeyA'] || this.keys['ArrowLeft']) dx -= 1;
+    if (this.keys['KeyD'] || this.keys['ArrowRight']) dx += 1;
 
     if (dx !== 0 || dy !== 0) {
       const len = Math.hypot(dx, dy);

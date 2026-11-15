@@ -283,8 +283,6 @@ h1 {
 .card-augment:hover { border-color:#7a7abc; box-shadow:0 0 16px rgba(122,122,188,.3); }
 .card-weaponUp { border-color:#8c5a5a; }
 .card-weaponUp:hover { border-color:#bc7a7a; box-shadow:0 0 16px rgba(188,122,122,.3); }
-.card-newWeapon { border-color:#8c7a5a; }
-.card-newWeapon:hover { border-color:#bc9a7a; box-shadow:0 0 16px rgba(188,154,122,.3); }
 
 /* 炫彩发光 */
 @keyframes radiantGlow {
@@ -298,4 +296,19 @@ h1 {
 .card-radiant:hover {
   animation: radiantGlow 1.6s ease-in-out infinite;
   box-shadow:0 0 20px rgba(255,105,180,.8), 0 0 44px rgba(255,105,180,.5), 0 0 64px rgba(255,105,180,.2);
+}
+
+/* 质变发光（小质变 / 大质变）：黄色 */
+@keyframes mutationGlow {
+  0%, 100% { box-shadow:0 0 8px rgba(255,214,0,.5), 0 0 20px rgba(255,214,0,.25); }
+  50% { box-shadow:0 0 14px rgba(255,214,0,.75), 0 0 36px rgba(255,214,0,.45), 0 0 56px rgba(255,214,0,.18); }
+}
+.card-mutation {
+  animation: mutationGlow 1.6s ease-in-out infinite;
+  border-color: #ffd600;
+}
+.card-mutation:hover {
+  animation: mutationGlow 1.6s ease-in-out infinite;
+  border-color: #ffe74d;
+  box-shadow:0 0 20px rgba(255,214,0,.85), 0 0 44px rgba(255,214,0,.55), 0 0 64px rgba(255,214,0,.22);
 }

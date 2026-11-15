@@ -25,6 +25,9 @@ const Upgrade = {
   TIER_COLORS: ['#cd7f32', '#c0c0c0', '#ffd700', '#ff69b4'],
   TIER_PROBS: [0.42, 0.32, 0.22, 0.04],
 
+  // 质变卡（小质变 / 大质变）的名称颜色与发光色
+  MUTATION_COLOR: '#ffd600',
+
   HP_MULTS: [1.3, 1.6, 2.2, 3.4],
   SHIELD_MULTS: [1.3, 1.6, 2.2, 3.4],
   SPD_MULTS: [1.1, 1.2, 1.4, 1.8],
@@ -132,61 +135,128 @@ const Upgrade = {
     });
   },
 
-  randomCard(player) {
-    const types = ['character', 'augment'];
-    const weights = [1, 1];
-
-    const hasWeaponUpgrades = false;
-    const hasNewWeapons = false;
-
-    if (hasWeaponUpgrades) { types.push('weaponUp'); weights.push(1); }
-    if (hasNewWeapons) { types.push('newWeapon'); weights.push(1); }
-
-    const totalW = weights.reduce((a, b) => a + b, 0);
-    let r = Math.random() * totalW;
-    let type = types[0];
-    for (let i = 0; i < types.length; i++) {
-      r -= weights[i];
-      if (r <= 0) { type = types[i]; break; }
-    }
-
-    switch (type) {
-      case 'character': return this.randomCharacterCard(player);
-      case 'augment': return this.randomAugmentCard(player);
-      case 'weaponUp': return { cardType: 'weaponUp', name: player.weapons.map(w => w.name).join('/') + ' 武器强化', desc: '（暂无可用）', tier: -1, apply() {} };
-      case 'newWeapon': return { cardType: 'newWeapon', name: '新武器', desc: '（暂无可用）', tier: -1, apply() {} };
-    }
+  // 武器强化方向。每个方向可强化 4 次，第 4 次是名义上的「小质变」：机制不变，只是卡片发黄光。
+  // 4 次用完后该方向不再出现在卡池；所有方向都用完后，大质变进入卡池且可无限次获取。
+  WEAPON_UPG: {
+    warrior: [
+      {
+        key: 'range',
+        name: '长锋',
+        desc: '挥剑半径 +12',
+        apply(player) { Weapon.ATTACK_RANGE += 12; }
+      },
+      {
+        key: 'angle',
+        name: '阔斩',
+        desc: '挥剑角度 +15°',
+        apply(player) { Weapon.SWING_ANGLE += 15 * Math.PI / 180; }
+      },
+      {
+        key: 'knockback',
+        name: '崩山',
+        desc: '击退速度 +50',
+        apply(player) { player.knockbackSpeed += 50; }
+      },
+      {
+        key: 'sharp',
+        name: '淬刃',
+        desc: '锐器伤基础伤害 +1',
+        apply(player) { Weapon.DAMAGE += 1; }
+      }
+    ]
   },
 
-  randomCharacterCard(player) {
-    const options = [];
+  UPG_MAX: 4,
+  BLUNT_PER_MUTATION: 2,
 
-    options.push({ subType: 'hp', name: '血量强化', weight: 1 });
-    if (Shield.calcBase(player.level) > 0) {
-      options.push({ subType: 'shield', name: '护盾强化', weight: 1 });
-    }
-    if (player.speed < this.SPD_CAP) {
-      options.push({ subType: 'speed', name: '移速强化', weight: 1 });
-    }
-    options.push({ subType: 'recovery', name: '恢复强化', weight: 1 });
-    options.push({ subType: 'crit', name: '暴击增强', weight: 1 });
-    options.push({ subType: 'refresh', name: '刷新次数', weight: 1 });
-    options.push({ subType: 'cardCount', name: '卡牌数量', weight: 1 });
-    if (ExpOrbs.ATTRACT_RANGE < this.ABSORB_CAP) {
-      options.push({ subType: 'absorb', name: '吸收范围', weight: 1 });
-    }
+  // 卡池按「方向」平摊概率：角色方向、增幅方向、武器强化方向各算一项，每项权重相同。
+  // 先按方向抽，再按方向决定卡面，不再有「卡牌类型」这一层概率。
+  randomCard(player) {
+    const dirs = this.availableDirections(player);
+    const dir = dirs[Math.floor(Math.random() * dirs.length)];
+    const tier = dir.tiered ? this.rollTier() : -1;
 
-    const totalW = options.reduce((a, o) => a + o.weight, 0);
-    let r = Math.random() * totalW;
-    let chosen = options[0];
-    for (const o of options) {
-      r -= o.weight;
-      if (r <= 0) { chosen = o; break; }
+    if (dir.kind === 'weapon') return this.weaponUpCard(player, dir.dir);
+    if (dir.kind === 'bluntMutation') return this.bluntMutationCard(player);
+    if (dir.kind === 'globalPower' || dir.kind === 'globalSpeed') {
+      return this.randomAugmentCard(player, true, dir.kind === 'globalSpeed', tier);
     }
+    if (dir.kind === 'weaponPower' || dir.kind === 'weaponSpeed') {
+      return this.randomAugmentCard(player, false, dir.kind === 'weaponSpeed', tier);
+    }
+    return this.randomCharacterCard(player, dir.kind, tier);
+  },
 
-    const tier = this.rollTier();
+  // 当前可出现的全部方向。已满的武器强化方向、已到上限的属性方向都会从池中移除
+  availableDirections(player) {
+    const dirs = [];
 
-    switch (chosen.subType) {
+    dirs.push({ kind: 'hp', tiered: true });
+    if (Shield.calcBase(player.level) > 0) dirs.push({ kind: 'shield', tiered: true });
+    if (player.speed < this.SPD_CAP) dirs.push({ kind: 'speed', tiered: true });
+    dirs.push({ kind: 'recovery' });
+    dirs.push({ kind: 'crit' });
+    dirs.push({ kind: 'refresh' });
+    dirs.push({ kind: 'cardCount' });
+    if (ExpOrbs.ATTRACT_RANGE < this.ABSORB_CAP) dirs.push({ kind: 'absorb' });
+
+    dirs.push({ kind: 'globalPower', tiered: true });
+    dirs.push({ kind: 'globalSpeed', tiered: true });
+    dirs.push({ kind: 'weaponPower', tiered: true });
+    dirs.push({ kind: 'weaponSpeed', tiered: true });
+
+    const weaponDirs = this.WEAPON_UPG[player.key] || [];
+    let allMaxed = weaponDirs.length > 0;
+    for (const d of weaponDirs) {
+      if (this.upgCount(player, d.key) < this.UPG_MAX) {
+        dirs.push({ kind: 'weapon', dir: d });
+        allMaxed = false;
+      }
+    }
+    if (allMaxed) dirs.push({ kind: 'bluntMutation' });
+
+    return dirs;
+  },
+
+  upgCount(player, key) {
+    return player.weaponUpg[key] || 0;
+  },
+
+  weaponUpCard(player, dir) {
+    const hero = HEROES[player.key];
+    const next = this.upgCount(player, dir.key) + 1;
+    const isMut = next >= this.UPG_MAX;
+
+    return {
+      cardType: 'weaponUp',
+      name: hero.weapon + '·' + dir.name,
+      tier: -1,
+      glow: isMut,
+      desc: dir.desc + '\n第 ' + next + '/' + this.UPG_MAX + ' 次',
+      apply() {
+        dir.apply(player);
+        player.weaponUpg[dir.key] = next;
+      }
+    };
+  },
+
+  bluntMutationCard(player) {
+    const hero = HEROES[player.key];
+    return {
+      cardType: 'weaponUp',
+      name: hero.weapon + '·大质变',
+      tier: -1,
+      glow: true,
+      desc: '钝器伤 +2\n当前钝器伤 ' + (player.bluntDamage + this.BLUNT_PER_MUTATION) +
+        '\n对带护盾怪物：伤害 × min(y+1,盾)/盾',
+      apply() {
+        player.bluntDamage += Upgrade.BLUNT_PER_MUTATION;
+      }
+    };
+  },
+
+  randomCharacterCard(player, subType, tier) {
+    switch (subType) {
       case 'hp':
         return {
           cardType: 'character',
@@ -280,11 +350,7 @@ const Upgrade = {
     }
   },
 
-  randomAugmentCard(player) {
-    const isGlobal = Math.random() < 0.5;
-    const isSpeed = Math.random() < 0.5;
-    const tier = this.rollTier();
-
+  randomAugmentCard(player, isGlobal, isSpeed, tier) {
     const hero = HEROES[player.key];
     const mults = isGlobal ? this.GLOBAL_AUG_MULTS : this.WEAPON_AUG_MULTS;
     const scope = isGlobal ? '全体' : '武器';
@@ -364,6 +430,7 @@ const Upgrade = {
 
     const tierColor = card.tier >= 0 ? this.TIER_COLORS[card.tier] : '#888';
     const tierName = card.tier >= 0 ? this.TIER_NAMES[card.tier] : '';
+    const nameColor = card.glow ? this.MUTATION_COLOR : tierColor;
 
     if (card.tier >= 0) {
       el.style.borderColor = tierColor;
@@ -373,8 +440,13 @@ const Upgrade = {
       el.classList.add('card-radiant');
     }
 
+    // 质变卡（小质变与大质变）发黄光
+    if (card.glow) {
+      el.classList.add('card-mutation');
+    }
+
     el.innerHTML =
-      '<div class="card-name" style="color:' + tierColor + '">' + card.name + '</div>' +
+      '<div class="card-name" style="color:' + nameColor + '">' + card.name + '</div>' +
       (tierName ? '<div class="card-tier" style="color:' + tierColor + '">' + tierName + '</div>' : '') +
       '<div class="card-desc">' + card.desc.replace(/\n/g, '<br>') + '</div>';
 
