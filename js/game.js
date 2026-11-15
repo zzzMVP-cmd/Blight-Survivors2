@@ -101,6 +101,7 @@ const Game = {
     this.hitFlashTime = 0;
     this.accumulator = 0;
     Weapon.init(this.hero);
+    Upgrade.recalcDisplayAug(this.player);
     Charge.reset();
     ExpOrbs.clear();
     DamageNumbers.clear();
@@ -179,7 +180,7 @@ const Game = {
     for (let i = 0; i < list.length; i++) {
       const m = list[i];
       if (m.hp <= 0) {
-        ExpOrbs.spawn(m.x, m.y, m.maxHp);
+        ExpOrbs.spawn(m.x, m.y, m.maxHp + m.maxShield);
       } else {
         list[write++] = m;
       }

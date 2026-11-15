@@ -1,6 +1,6 @@
 'use strict';
 
-// 经验球：怪物死亡时掉落，玩家走过去拾取，经验 = 怪物 maxHp
+// 经验球：怪物死亡时掉落，玩家走过去拾取，经验 = 怪物 maxHp + maxShield
 const ExpOrbs = {
   orbs: [],
   PICKUP_RANGE: 28,

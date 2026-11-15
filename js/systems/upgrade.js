@@ -253,7 +253,7 @@ const Upgrade = {
       tier: -1,
       glow: true,
       desc: '钝器伤 +2\n当前钝器伤 ' + (player.bluntDamage + this.BLUNT_PER_MUTATION) +
-        '\n对带护盾怪物：伤害 × min(y+1,盾)/盾',
+        '\n对带护盾怪物：伤害 × min(钝器伤+1, 盾)/盾',
       apply() {
         player.bluntDamage += Upgrade.BLUNT_PER_MUTATION;
       }
