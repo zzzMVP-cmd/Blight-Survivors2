@@ -15,19 +15,19 @@ const Monsters = {
   },
 
   SIZE_GROWTH: 0.03,
-  SIZE_CAP_WAVE: 50,
+  SIZE_CAP_WAVE: 40,
 
-  SHIELD_WAVE_STEP: 50,
+  SHIELD_WAVE_STEP: 40,
   SHIELD_SCALE: 1.2,
 
-  // 体积随波次线性增长（每波 +3%），第 50 波封顶后不再增大
+  // 体积随波次线性增长（每波 +3%），第 40 波封顶后不再增大
   calcRadius(wave, typeKey) {
     const t = this.TYPES[typeKey];
     const w = Math.max(1, Math.min(wave, this.SIZE_CAP_WAVE));
     return t.baseRadius * (1 + this.SIZE_GROWTH * (w - 1));
   },
 
-  // 每 50 波基础护盾 +1，且整体每波 ×1.2：floor(波数/50) × 1.2^波数
+  // 每 40 波基础护盾 +1，且整体每波 ×1.2：floor(波数/40) × 1.2^波数
   calcShield(wave) {
     const w = Math.max(0, wave);
     return Math.round(Math.floor(w / this.SHIELD_WAVE_STEP) * Math.pow(this.SHIELD_SCALE, w));

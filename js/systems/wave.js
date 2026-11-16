@@ -1,12 +1,13 @@
 'use strict';
 
 // 波次管理：3s 准备 → 第一波；两波间隔 15s；清场后 1s 提前下一波。
-// 每波数量、血量、伤害均为上波的 1.2 倍（四舍五入）。
+// 第 40 波是关键节点：数量、血量、伤害均为上波的 1.2 倍（四舍五入）。
+// 40 波之后数量不再增长，血量与伤害改为每波 1.44 倍（相当于原本「数量 × 血量」的合并增幅）。
 // 同屏存活怪物上限 MAX_ALIVE：超出部分进 spawnQueue 排队，每死一只补刷一只，
 // 直到队列清空才判定本波清场（排队数跨波累积，不会丢弃，经验总量不减少）。
 // 上限同时承担「渲染上限」的作用：不再有独立的渲染筛选，场上每一只都会被绘制。
-// 倒计时规则：非清场状态下倒计时到 INTERVAL 时，若刷怪列表还有怪物没刷完（spawnQueue>0），
-// 则追加 EXTENSION 秒继续刷，直到队列清空为止；否则强制进入下一波。
+// 倒计时规则：关键节点波（40 的倍数）不限时，必须清场才进入下一波；
+// 其余波次到 INTERVAL 时强制进入下一波，未刷完的排队数继续累积到下一波。
 const Wave = {
   state: 'prepare',
   countdown: 0,
@@ -23,9 +24,10 @@ const Wave = {
 
   PREPARE_TIME: 3,
   INTERVAL: 15,
-  EXTENSION: 30,
   CLEAR_BONUS: 1,
   SCALE: 1.2,
+  LATE_SCALE: 1.44,
+  KEY_WAVE_STEP: 40,
   MAX_ALIVE: 200,
 
   BASE_COUNT: 4,
@@ -74,14 +76,7 @@ const Wave = {
       }
     } else {
       this.clearAt = null;
-      if (this.waveElapsed >= this.waveDeadline) {
-        if (this.spawnQueue > 0) {
-          // 到点时刷怪列表还有怪物没刷完：追加 EXTENSION 秒继续刷
-          this.waveDeadline += this.EXTENSION;
-        } else {
-          this.startWave();
-        }
-      }
+      if (this.waveElapsed >= this.waveDeadline) this.startWave();
     }
   },
 
@@ -93,16 +88,27 @@ const Wave = {
     }
   },
 
+  // 关键节点波：40 的倍数，不限时，必须清场才进入下一波
+  isKeyWave(wave) {
+    return wave > 0 && wave % this.KEY_WAVE_STEP === 0;
+  },
+
   startWave() {
     this.wave += 1;
     this.waveElapsed = 0;
     this.clearAt = null;
-    this.waveDeadline = this.INTERVAL;
+    this.waveDeadline = this.isKeyWave(this.wave) ? Infinity : this.INTERVAL;
 
     if (this.wave > 1) {
-      this.waveCount = Math.round(this.waveCount * this.SCALE);
-      this.waveHp = Math.round(this.waveHp * this.SCALE);
-      this.waveDamage = Math.round(this.waveDamage * this.SCALE);
+      if (this.wave <= this.KEY_WAVE_STEP) {
+        this.waveCount = Math.round(this.waveCount * this.SCALE);
+        this.waveHp = Math.round(this.waveHp * this.SCALE);
+        this.waveDamage = Math.round(this.waveDamage * this.SCALE);
+      } else {
+        // 40 波之后数量封顶，血量与伤害改为每波 1.44 倍
+        this.waveHp = Math.round(this.waveHp * this.LATE_SCALE);
+        this.waveDamage = Math.round(this.waveDamage * this.LATE_SCALE);
+      }
     }
 
     this.spawnQueue += this.waveCount;
@@ -117,6 +123,8 @@ const Wave = {
     if (this.monsters.length === 0 && this.spawnQueue === 0) {
       const waited = this.waveElapsed - (this.clearAt || this.waveElapsed);
       nextTime = Math.max(0, Math.ceil(this.CLEAR_BONUS - waited));
+    } else if (this.isKeyWave(this.wave)) {
+      nextTime = '不限时（清场后进入下一波）';
     } else {
       nextTime = Math.max(0, Math.ceil(this.waveDeadline - this.waveElapsed));
     }
