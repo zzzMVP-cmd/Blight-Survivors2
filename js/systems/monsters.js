@@ -33,43 +33,84 @@ const Monsters = {
     return Math.round(Math.floor(w / this.SHIELD_WAVE_STEP) * Math.pow(this.SHIELD_SCALE, w));
   },
 
-  // 绘制怪物（按 key 分发，目前仅 slime）
+  // 绘制怪物本体与血条（按 key 分发，目前仅 slime）。护盾环与护盾值由
+  // drawShieldRings / drawShieldTexts 批量绘制，需在调用本方法之前/之后分别执行。
   draw(ctx, m) {
     if (m.key === 'slime') this.drawSlime(ctx, m);
-    this.drawShieldRing(ctx, m);
     this.drawHpBar(ctx, m);
   },
 
-  // 护盾环：白偏色细圈，下部留缺口显示护盾值，护盾越少越透明；护盾为 0 时整环不绘制
-  drawShieldRing(ctx, m) {
-    if (m.maxShield <= 0 || m.shield <= 0) return;
+  // 护盾环的透明度按护盾比例量化为 4 档，同档的弧累加到同一条 path，
+  // 每档只 stroke 一次，避免「每只怪一次 beginPath/stroke + 一次样式切换」
+  SHIELD_ALPHA: [0.3, 0.55, 0.8, 1],
+  SHIELD_STROKE: '#f2f4ff',
+  SHIELD_FONT: 'bold 11px sans-serif',
+  SHIELD_TEXT: '#e8ecff',
+  _ringGroups: [[], [], [], []],
 
-    const ratio = Math.max(0, Math.min(1, m.shield / m.maxShield));
-    const r = m.radius + 5;
+  shieldAlphaLevel(ratio) {
+    const i = Math.round(Math.max(0, Math.min(1, ratio)) * 3);
+    return i > 3 ? 3 : i;
+  },
+
+  // 护盾环：白偏色细圈，下部留缺口显示护盾值，护盾越少越透明；护盾为 0 时整环不绘制。
+  // 需在绘制怪物本体之前调用（环在体外，先画环不影响本体层次）。
+  drawShieldRings(ctx, list) {
+    const groups = this._ringGroups;
+    groups[0].length = 0;
+    groups[1].length = 0;
+    groups[2].length = 0;
+    groups[3].length = 0;
+
+    let total = 0;
+    for (const m of list) {
+      if (m.maxShield <= 0 || m.shield <= 0) continue;
+      groups[this.shieldAlphaLevel(m.shield / m.maxShield)].push(m);
+      total += 1;
+    }
+    if (total === 0) return;
+
     const gap = 0.7;
     const start = Math.PI / 2 + gap;
     const end = Math.PI / 2 - gap + Math.PI * 2;
+    const cosStart = Math.cos(start);
+    const sinStart = Math.sin(start);
 
-    ctx.save();
-    ctx.globalAlpha = 0.12 + 0.88 * ratio;
-    ctx.strokeStyle = '#f2f4ff';
+    ctx.strokeStyle = this.SHIELD_STROKE;
     ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.arc(m.x, m.y, r, start, end);
-    ctx.stroke();
-    ctx.restore();
+    for (let i = 0; i < 4; i++) {
+      const g = groups[i];
+      if (g.length === 0) continue;
+      ctx.globalAlpha = this.SHIELD_ALPHA[i];
+      ctx.beginPath();
+      for (const m of g) {
+        const r = m.radius + 5;
+        ctx.moveTo(m.x + r * cosStart, m.y + r * sinStart);
+        ctx.arc(m.x, m.y, r, start, end);
+      }
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  },
 
-    ctx.save();
-    ctx.font = 'bold 11px sans-serif';
+  // 护盾值数字：字体与填充色每帧只设置一次，逐只只做一次 fillText（不再描边）
+  drawShieldTexts(ctx, list) {
+    let any = false;
+    for (const m of list) {
+      if (m.maxShield > 0 && m.shield > 0) {
+        any = true;
+        break;
+      }
+    }
+    if (!any) return;
+
+    ctx.font = this.SHIELD_FONT;
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#e8ecff';
-    ctx.strokeStyle = 'rgba(0,0,0,.65)';
-    ctx.lineWidth = 3;
-    const ty = m.y + r + 12;
-    const text = Math.ceil(m.shield).toString();
-    ctx.strokeText(text, m.x, ty);
-    ctx.fillText(text, m.x, ty);
-    ctx.restore();
+    ctx.fillStyle = this.SHIELD_TEXT;
+    for (const m of list) {
+      if (m.maxShield <= 0 || m.shield <= 0) continue;
+      ctx.fillText(Math.ceil(m.shield).toString(), m.x, m.y + m.radius + 17);
+    }
   },
 
   drawHpBar(ctx, m) {

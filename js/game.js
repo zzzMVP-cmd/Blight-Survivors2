@@ -264,9 +264,12 @@ const Game = {
     ctx.scale(this.zoom, this.zoom);
     ctx.translate(-w / 2 + camX, -h / 2 + camY);
 
-    for (const m of this.renderMonsters()) {
+    const monsters = this.renderMonsters();
+    Monsters.drawShieldRings(ctx, monsters);
+    for (const m of monsters) {
       Monsters.draw(ctx, m);
     }
+    Monsters.drawShieldTexts(ctx, monsters);
 
     const inv = this.player.invTime > 0;
     const visible = !inv || Math.floor(this.player.invTime * 20) % 2 === 0;
