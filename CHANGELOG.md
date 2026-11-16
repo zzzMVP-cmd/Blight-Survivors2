@@ -4,6 +4,24 @@
 
 ---
 
+## [0.6.11] - 2026-11-16
+
+### 调整
+- **大质变改为每局只能获取一次**（`upgrade.js` + `game.js`）：
+  - 新增玩家字段 `bluntMutationTaken`（初值 `false`），在 [bluntMutationCard](file:///d:/游戏素材/Blight%20Survivors2/js/systems/upgrade.js) 的 `apply()` 中置为 `true`。
+  - `availableDirections` 的条件由 `if (allMaxed)` 改为 `if (allMaxed && !player.bluntMutationTaken)`，获取后该方向不再进入卡池。
+  - 卡面文案追加「（仅可获取一次）」。
+
+### 影响
+- 获取大质变后，该武器 4 个方向已满 + 大质变已取，**不再提供任何武器强化卡**；总方向数由 12 降为 11。
+- 钝器伤本局上限固定为 **2**（`BLUNT_PER_MUTATION = 2`）。护盾结算系数 `min(钝器伤+1, 盾)/盾` 在厚盾面前会非常小（第 40 波 `盾=1470` 时约 `0.002`），即钝器伤在高波次基本不产生收益。
+- 抽取概率相应重新分配：其余 11 个方向各占约 9.1%（实测 500 次模拟分布均匀）。
+
+### 说明
+- 本次未打包，`release\` 中最新的安装包仍是 v0.6.3。
+
+---
+
 ## [0.6.10] - 2026-11-16
 
 ### 调整

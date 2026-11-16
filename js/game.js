@@ -90,8 +90,10 @@ const Game = {
       displayPowerAug: 1,
       overflowDmgMult: 1,
       effectiveInterval: this.hero.attackInterval,
-      // 钝器伤基础值：由破阵斩的大质变累积
+      // 钝器伤基础值：由破阵斩的大质变累积（大质变只能获取一次）
       bluntDamage: 0,
+      // 大质变是否已获取，获取后不再出现在卡池
+      bluntMutationTaken: false,
       // 击退速度：基础值来自 Attack.KNOCKBACK_SPEED，可被武器强化提升
       knockbackSpeed: Attack.KNOCKBACK_SPEED,
       // 武器强化各方向已选次数（key 见 Upgrade.WEAPON_UPG）

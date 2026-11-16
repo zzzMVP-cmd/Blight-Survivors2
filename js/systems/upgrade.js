@@ -216,7 +216,7 @@ const Upgrade = {
         allMaxed = false;
       }
     }
-    if (allMaxed) dirs.push({ kind: 'bluntMutation' });
+    if (allMaxed && !player.bluntMutationTaken) dirs.push({ kind: 'bluntMutation' });
 
     return dirs;
   },
@@ -250,10 +250,11 @@ const Upgrade = {
       name: hero.weapon + '·大质变',
       tier: -1,
       glow: true,
-      desc: '钝器伤 +2\n当前钝器伤 ' + (player.bluntDamage + this.BLUNT_PER_MUTATION) +
+      desc: '钝器伤 +2（仅可获取一次）\n当前钝器伤 ' + (player.bluntDamage + this.BLUNT_PER_MUTATION) +
         '\n对带护盾怪物：伤害 × min(钝器伤+1, 盾)/盾',
       apply() {
         player.bluntDamage += Upgrade.BLUNT_PER_MUTATION;
+        player.bluntMutationTaken = true;
       }
     };
   },
