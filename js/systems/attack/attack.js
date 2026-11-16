@@ -45,17 +45,19 @@ const Attack = {
               blunt = Crit.calcDamage(player, blunt);
             }
 
-            // 穿透只作用于锐器伤：钝器伤没有穿透
-            const area = Math.PI * m.radius * m.radius;
-            const threshold = (m.maxHp + m.shield) / area;
-            const pierce = sharp > threshold;
-            if (pierce) {
-              sharp = sharp * (1 + this.PIERCE_MULT_PER_LEVEL * Math.max(1, player.level));
-            }
-
             // 钝器伤对带护盾的怪物单独结算：(x + y) × min(y+1, shield) / shield
             // 没有护盾时不套这个公式，按普通叠加结算
             const mult = m.shield > 0 ? Math.min(blunt + 1, m.shield) / m.shield : 1;
+
+            // 穿透只作用于锐器伤：钝器伤没有穿透。
+            // 判定用「经过护盾压制后的锐器伤」与「(最大血量 + 当前护盾) / 体积」比较，
+            // 即护盾后判定：护盾越厚，实际能用于穿透的锐器伤越低，越难触发。
+            const area = Math.PI * m.radius * m.radius;
+            const threshold = (m.maxHp + m.shield) / area;
+            const pierce = sharp * mult > threshold;
+            if (pierce) {
+              sharp = sharp * (1 + this.PIERCE_MULT_PER_LEVEL * Math.max(1, player.level));
+            }
 
             const parts = [];
             if (sharp > 0) parts.push({ type: 'sharp', value: sharp * mult, pierce: pierce });
