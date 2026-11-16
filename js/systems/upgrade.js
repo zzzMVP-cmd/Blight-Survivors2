@@ -28,8 +28,7 @@ const Upgrade = {
   // 质变卡（小质变 / 大质变）的名称颜色与发光色
   MUTATION_COLOR: '#ffd600',
 
-  HP_MULTS: [1.3, 1.6, 2.2, 3.4],
-  SHIELD_MULTS: [1.3, 1.6, 2.2, 3.4],
+  BODY_MULTS: [1.3, 1.6, 2.2, 3.4],
   SPD_MULTS: [1.1, 1.2, 1.4, 1.8],
   SPD_CAP: 400,
 
@@ -196,8 +195,7 @@ const Upgrade = {
   availableDirections(player) {
     const dirs = [];
 
-    dirs.push({ kind: 'hp', tiered: true });
-    if (Shield.calcBase(player.level) > 0) dirs.push({ kind: 'shield', tiered: true });
+    dirs.push({ kind: 'body', tiered: true });
     if (player.speed < this.SPD_CAP) dirs.push({ kind: 'speed', tiered: true });
     dirs.push({ kind: 'recovery' });
     dirs.push({ kind: 'crit' });
@@ -262,26 +260,21 @@ const Upgrade = {
 
   randomCharacterCard(player, subType, tier) {
     switch (subType) {
-      case 'hp':
+      case 'body':
         return {
           cardType: 'character',
-          name: '血量强化',
+          name: '体魄',
           tier: tier,
-          desc: this.TIER_NAMES[tier] + '级：最大血量 ×' + this.HP_MULTS[tier],
+          desc: this.TIER_NAMES[tier] + '级：最大血量 ×' + this.BODY_MULTS[tier] +
+            '\n护盾倍率 ×' + this.BODY_MULTS[tier] +
+            (player.maxShield > 0
+              ? '\n当前最大护盾 ' + player.maxShield
+              : '\n（等级 50 解锁护盾后生效）'),
           apply() {
-            player.maxHp = Math.round(player.maxHp * Upgrade.HP_MULTS[tier]);
-            player.hp = Math.min(player.hp + Math.round(player.maxHp * (Upgrade.HP_MULTS[tier] - 1)), player.maxHp);
-          }
-        };
-
-      case 'shield':
-        return {
-          cardType: 'character',
-          name: '护盾强化',
-          tier: tier,
-          desc: this.TIER_NAMES[tier] + '级：护盾 ×' + this.SHIELD_MULTS[tier] + '\n当前最大护盾 ' + player.maxShield,
-          apply() {
-            Shield.grow(player, Upgrade.SHIELD_MULTS[tier]);
+            const mult = Upgrade.BODY_MULTS[tier];
+            player.maxHp = Math.round(player.maxHp * mult);
+            player.hp = Math.min(player.hp + Math.round(player.maxHp * (mult - 1)), player.maxHp);
+            Shield.grow(player, mult);
           }
         };
 
