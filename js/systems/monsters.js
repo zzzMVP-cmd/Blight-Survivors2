@@ -5,7 +5,7 @@ const Monsters = {
   TYPES: {
     slime: {
       name: '史莱姆',
-      baseRadius: 16,
+      baseRadius: 17,
       baseHp: 30,
       speed: 40,
       damage: 10,

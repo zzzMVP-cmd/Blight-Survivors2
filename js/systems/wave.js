@@ -30,9 +30,9 @@ const Wave = {
   SCALE: 1.2,
   LATE_SCALE: 1.44,
   KEY_WAVE_STEP: 40,
-  MAX_ALIVE: 200,
+  MAX_ALIVE: 250,
 
-  BASE_COUNT: 4,
+  BASE_COUNT: 3,
   BASE_HP: 30,
   BASE_DAMAGE: 10,
 
