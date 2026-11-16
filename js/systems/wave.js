@@ -5,6 +5,8 @@
 // 40 波之后数量不再增长，血量与伤害改为每波 1.44 倍（相当于原本「数量 × 血量」的合并增幅）。
 // 同屏存活怪物上限 MAX_ALIVE：超出部分进 spawnQueue 排队，每死一只补刷一只，
 // 直到队列清空才判定本波清场（排队数跨波累积，不会丢弃，经验总量不减少）。
+// spawnQueue 按批次保存（wave / hp / damage / count 快照），排队怪刷出时使用入队那一波的数值，
+// 不会因为拖到后续波次而被改成当前波的血量、伤害与护盾。
 // 上限同时承担「渲染上限」的作用：不再有独立的渲染筛选，场上每一只都会被绘制。
 // 倒计时规则：关键节点波（40 的倍数）不限时，必须清场才进入下一波；
 // 其余波次到 INTERVAL 时强制进入下一波，未刷完的排队数继续累积到下一波。
@@ -15,7 +17,7 @@ const Wave = {
   waveElapsed: 0,
   clearAt: null,
   monsters: [],
-  spawnQueue: 0,
+  spawnQueue: [],
   waveDeadline: 0,
 
   waveCount: 0,
@@ -41,7 +43,7 @@ const Wave = {
     this.waveElapsed = 0;
     this.clearAt = null;
     this.monsters = [];
-    this.spawnQueue = 0;
+    this.spawnQueue = [];
     this.waveDeadline = 0;
     this.waveCount = this.BASE_COUNT;
     this.waveHp = this.BASE_HP;
@@ -68,7 +70,7 @@ const Wave = {
 
     this.waveElapsed += dt;
 
-    const cleared = this.monsters.length === 0 && this.spawnQueue === 0;
+    const cleared = this.monsters.length === 0 && this.spawnQueue.length === 0;
     if (cleared) {
       this.clearAt = this.clearAt === null ? this.waveElapsed : this.clearAt;
       if (this.waveElapsed - this.clearAt >= this.CLEAR_BONUS) {
@@ -80,11 +82,14 @@ const Wave = {
     }
   },
 
-  // 补刷：队列里还有怪物、且同屏未达上限时，把队列按当前波数值生成到场上
+  // 补刷：队列里还有怪物、且同屏未达上限时，按批次取出排队怪生成到场上。
+  // 每批怪使用入队那一波的血量、伤害与波号（波号决定半径与护盾），不随当前波次变化。
   fillField() {
-    while (this.spawnQueue > 0 && this.monsters.length < this.MAX_ALIVE) {
-      this.spawnQueue -= 1;
-      this.monsters.push(MonsterAI.spawn('slime', Game.player, this.waveHp, this.waveDamage, this.wave));
+    while (this.spawnQueue.length > 0 && this.monsters.length < this.MAX_ALIVE) {
+      const batch = this.spawnQueue[0];
+      this.monsters.push(MonsterAI.spawn('slime', Game.player, batch.hp, batch.damage, batch.wave));
+      batch.count -= 1;
+      if (batch.count <= 0) this.spawnQueue.shift();
     }
   },
 
@@ -111,7 +116,13 @@ const Wave = {
       }
     }
 
-    this.spawnQueue += this.waveCount;
+    // 入队时快照本波数值，排队怪刷出时沿用这份数值
+    this.spawnQueue.push({
+      wave: this.wave,
+      hp: this.waveHp,
+      damage: this.waveDamage,
+      count: this.waveCount
+    });
     this.fillField();
   },
 
@@ -120,7 +131,7 @@ const Wave = {
       return '准备中，还有 ' + Math.ceil(Math.max(0, this.countdown)) + ' 秒第一波';
     }
     let nextTime;
-    if (this.monsters.length === 0 && this.spawnQueue === 0) {
+    if (this.monsters.length === 0 && this.spawnQueue.length === 0) {
       const waited = this.waveElapsed - (this.clearAt || this.waveElapsed);
       nextTime = Math.max(0, Math.ceil(this.CLEAR_BONUS - waited));
     } else if (this.isKeyWave(this.wave)) {
