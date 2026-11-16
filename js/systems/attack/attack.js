@@ -3,9 +3,10 @@
 // 各英雄的攻击判定系统。每个英雄的判定逻辑不同，在此统一管理。
 const Attack = {
 
+  // 锐器伤与钝器伤都属于物理伤，统一使用红色；靠图标（🗡 / 🔨）区分类型
   DAMAGE_TYPES: {
     sharp: { icon: '🗡', color: '#b91c1c' },
-    blunt: { icon: '🔨', color: '#8b9bb4' }
+    blunt: { icon: '🔨', color: '#b91c1c' }
   },
 
   PIERCE_MULT_PER_LEVEL: 0.05,
