@@ -63,33 +63,19 @@ const Weapon = {
     }
   },
 
-  // 蓄力松开：立即进入瞄准，下一刀按 count 次攻击合并结算
-  // 返回 false 表示攻击范围内没有可攻击目标，攻击判定不会生效，本次不挥砍
-  startChargedAttack(player, monsters, count) {
-    const target = this.findTarget(player, monsters, true);
-    if (!target) return false;
+  // 蓄力松开：跳过瞄准与挥砍动画，立即按 angle 方向挥出，把 count 次攻击合并成一次结算。
+  // 不再要求攻击范围内有目标——打空也算挥出（方向完全由玩家决定）。
+  startChargedAttack(player, angle, count) {
+    this.angle = angle;
+    this.target = null;
+    this.swingDir = -this.swingDir;
 
-    this.chargedAttack = true;
-    this.chargeCount = count;
-    this.target = target;
-    this.targetAngle = Math.atan2(target.y - player.y, target.x - player.x);
-    this.targetX = target.x;
-    this.targetY = target.y;
+    this.pushArc(player, angle, count);
 
-    this.state = 'aiming';
-    this.aimTimer = this.AIM_DURATION;
-    return true;
-  },
-
-  // 蓄力结束但没有打出攻击（蓄力值作废）：攻击间隔视为 0，武器立即回到待机可再攻击
-  readyNow() {
     this.chargedAttack = false;
     this.chargeCount = 0;
-    this.target = null;
-    this.state = 'idle';
-    this.aimTimer = 0;
-    this.swingTimer = 0;
-    this.cooldownTimer = 0;
+    this.state = 'cooldown';
+    this.cooldownTimer = Math.max(0, this.ATTACK_INTERVAL - this.AIM_DURATION - this.SWING_DURATION);
   },
 
   update(dt, player, monsters) {
@@ -164,18 +150,7 @@ const Weapon = {
       const ty = this.targetY || player.y + Math.sin(this.targetAngle) * 60;
       const facingAngle = Math.atan2(ty - player.y, tx - player.x);
 
-      this.arcs.push({
-        playerX: player.x,
-        playerY: player.y,
-        facingAngle: facingAngle,
-        swingAngle: this.SWING_ANGLE,
-        radius: this.ATTACK_RANGE,
-        timer: this.ARC_DURATION,
-        maxTimer: this.ARC_DURATION,
-        hitSet: new Set(),
-        charged: this.chargedAttack,
-        chargeCount: this.chargeCount
-      });
+      this.pushArc(player, facingAngle, this.chargedAttack ? this.chargeCount : 0);
 
       // 连续攻击：下一刀反向挥出，形成 右→左 / 左→右 的交替循环
       this.swingDir = -this.swingDir;
@@ -185,6 +160,22 @@ const Weapon = {
       this.state = 'cooldown';
       this.cooldownTimer = Math.max(0, this.ATTACK_INTERVAL - this.AIM_DURATION - this.SWING_DURATION);
     }
+  },
+
+  // 生成一次剑气扇形判定。chargedCount > 0 表示这是蓄力合并攻击
+  pushArc(player, facingAngle, chargedCount) {
+    this.arcs.push({
+      playerX: player.x,
+      playerY: player.y,
+      facingAngle: facingAngle,
+      swingAngle: this.SWING_ANGLE,
+      radius: this.ATTACK_RANGE,
+      timer: this.ARC_DURATION,
+      maxTimer: this.ARC_DURATION,
+      hitSet: new Set(),
+      charged: chargedCount > 0,
+      chargeCount: chargedCount
+    });
   },
 
   updateCooldown(dt, player, monsters) {

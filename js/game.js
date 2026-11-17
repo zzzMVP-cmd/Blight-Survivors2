@@ -24,6 +24,9 @@ const Game = {
   MIN_ZOOM: 0.3,
   MAX_ZOOM: 3,
 
+  // 鼠标位置（屏幕坐标），蓄力攻击朝向由它决定
+  mouse: { x: 0, y: 0, valid: false },
+
   init(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
@@ -40,6 +43,20 @@ const Game = {
     });
     window.addEventListener('keyup', (e) => setKey(e.code, false));
 
+    // 数字键切换武器蓄力开关（1 = 武器栏最左侧的可蓄力武器）
+    window.addEventListener('keydown', (e) => {
+      if (e.repeat) return;
+      if (!this.running || this.paused || Upgrade.showing) return;
+      const idx = this.digitIndex(e.code);
+      if (idx >= 0) this.toggleWeaponCharge(idx);
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      this.mouse.x = e.clientX;
+      this.mouse.y = e.clientY;
+      this.mouse.valid = true;
+    });
+
     canvas.addEventListener('wheel', (e) => {
       e.preventDefault();
       const factor = e.deltaY > 0 ? 0.92 : 1.08;
@@ -49,6 +66,9 @@ const Game = {
     // 蓄力：画布上按下左键进入蓄力，松开结束（暂停中松手不取消，恢复后才结算）
     canvas.addEventListener('mousedown', (e) => {
       if (e.button !== 0) return;
+      this.mouse.x = e.clientX;
+      this.mouse.y = e.clientY;
+      this.mouse.valid = true;
       if (!this.running || this.paused || Upgrade.showing) return;
       Charge.start();
     });
@@ -56,8 +76,33 @@ const Game = {
       if (e.button !== 0) return;
       if (!this.running || !Charge.holding) return;
       if (Upgrade.showing) { Charge.reset(); return; }
-      Charge.end(this.player, Wave.monsters);
+      Charge.end(this.player, this.mouseAngle());
     });
+  },
+
+  // 鼠标指向的世界方向（相机恒定把玩家放在画面正中，缩放对角度无影响）
+  mouseAngle() {
+    if (!this.mouse.valid || !this.canvas) return Weapon.moveAngle;
+    return Math.atan2(
+      this.mouse.y - this.canvas.height / 2,
+      this.mouse.x - this.canvas.width / 2
+    );
+  },
+
+  // 数字键 → 从 0 开始的序号；非 1~9 的数字键返回 -1
+  digitIndex(code) {
+    const m = /^(?:Digit|Numpad)([1-9])$/.exec(code);
+    return m ? parseInt(m[1], 10) - 1 : -1;
+  },
+
+  // 切换武器蓄力开关：可蓄力 → 不可蓄力 → 可蓄力
+  toggleWeaponCharge(idx) {
+    const list = HUD.chargeWeapons || [];
+    const w = list[idx];
+    if (!w) return;
+    w.chargeEnabled = w.chargeEnabled === false;
+    Charge.cancelIfDisabled();
+    HUD.updateWeaponCharge();
   },
 
   start(heroKey) {
@@ -73,7 +118,12 @@ const Game = {
       shield: 0,
       maxShield: 0,
       speed: this.hero.speed,
-      weapons: [{ name: this.hero.weapon, icon: this.hero.weaponIcon }],
+      weapons: [{
+        name: this.hero.weapon,
+        icon: this.hero.weaponIcon,
+        canCharge: this.hero.weaponCanCharge !== false,
+        chargeEnabled: true
+      }],
       items: [],
       level: 1,
       exp: 0,
@@ -112,6 +162,7 @@ const Game = {
     Menu.hide();
     HUD.build();
     HUD.setWeapons(this.player.weapons);
+    Charge.bind(this.player.weapons);
     HUD.update(this.player);
     Wave.init();
     this.running = true;

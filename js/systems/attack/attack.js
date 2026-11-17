@@ -60,12 +60,25 @@ const Attack = {
               sharp = sharp * (1 + this.PIERCE_MULT_PER_LEVEL * Math.max(1, player.level));
             }
 
+            // 伤害上限 = 怪物总耐久（最大血量 + 最大护盾）。超出上限时先削锐器伤，
+            // 锐器伤削到 0 仍超出再削钝器伤，即钝器伤优先保留。
+            let sharpVal = Math.round(sharp * mult);
+            let bluntVal = Math.round(blunt * mult);
+            const cap = m.maxHp + m.maxShield;
+            if (sharpVal + bluntVal > cap) {
+              let excess = sharpVal + bluntVal - cap;
+              const cutSharp = Math.min(excess, sharpVal);
+              sharpVal -= cutSharp;
+              excess -= cutSharp;
+              if (excess > 0) bluntVal = Math.max(0, bluntVal - excess);
+            }
+
             const parts = [];
-            if (sharp > 0) parts.push({ type: 'sharp', value: sharp * mult, pierce: pierce });
-            if (blunt > 0) parts.push({ type: 'blunt', value: blunt * mult, pierce: false });
+            if (sharpVal > 0) parts.push({ type: 'sharp', value: sharpVal, pierce: pierce });
+            if (bluntVal > 0) parts.push({ type: 'blunt', value: bluntVal, pierce: false });
             parts.sort((a, b) => b.value - a.value);
 
-            const dmg = Math.max(1, Math.round((sharp + blunt) * mult));
+            const dmg = Math.max(1, sharpVal + bluntVal);
 
             const absorbed = Math.min(m.shield, dmg);
             m.shield -= absorbed;

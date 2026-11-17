@@ -182,6 +182,27 @@ h1 {
 }
 .weapon-slot img { width:40px; height:40px; object-fit:contain; }
 .weapon-slot span { font-size:11px; color:#cbb6ff; text-align:center; line-height:1.2; }
+/* 可蓄力（开）：金色边框 + 外发光，与蓄力条同色系 */
+.weapon-slot.charge-on {
+  border-color:#ffd76e;
+  box-shadow:0 0 12px rgba(255,215,110,.45);
+}
+/* 不可蓄力（关）：回落到灰色边框，快捷键标记一并变灰 */
+.weapon-slot.charge-off { border-color:#3a3a52; box-shadow:none; }
+.weapon-slot.charge-off img { opacity:.55; }
+/* 蓄力快捷键数字 */
+.weapon-key {
+  font-size:11px; font-weight:700; color:#ffd76e;
+  background:rgba(255,215,110,.14);
+  border:1px solid rgba(255,215,110,.55);
+  border-radius:4px; padding:0 5px; line-height:1.4;
+}
+.weapon-slot.charge-off .weapon-key {
+  color:#8a8aa0;
+  background:rgba(255,255,255,.05);
+  border-color:#3a3a52;
+}
+.weapon-name { font-size:11px; color:#cbb6ff; text-align:center; line-height:1.2; }
 
 /* 右侧道具栏（暂空占位） */
 .item-bar {

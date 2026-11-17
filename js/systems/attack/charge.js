@@ -28,10 +28,32 @@ const Charge = {
   FILL_DIM: '#3a3a4e',
   GLOW: '#ffd76e',
 
+  ICON_SIZE: 20,
+  ICON_GAP: 8,
+  iconCache: null,
+
   bars: [],
 
   init() {
-    this.bars = [{ weapon: Weapon }];
+    this.bars = [{ weapon: Weapon, entry: null }];
+    this.iconCache = {};
+  },
+
+  // 绑定武器栏条目，蓄力开关状态由条目上的 chargeEnabled 决定
+  bind(weapons) {
+    this.bars = [{ weapon: Weapon, entry: (weapons && weapons[0]) || null }];
+  },
+
+  // 当前武器是否处于「可蓄力」状态；不可蓄力时按住左键不会进入蓄力
+  enabled() {
+    const bar = this.bars[0];
+    if (!bar || !bar.entry) return true;
+    return bar.entry.chargeEnabled !== false;
+  },
+
+  // 蓄力途中被切换为不可蓄力：立即清空蓄力条，武器恢复正常自动攻击
+  cancelIfDisabled() {
+    if (this.holding && !this.enabled()) this.reset();
   },
 
   // 清空蓄力（重新开始 / 进入选卡 / 撤离）
@@ -64,6 +86,7 @@ const Charge = {
 
   start() {
     if (this.holding) return;
+    if (!this.enabled()) return;
 
     this.holding = true;
     this.elapsed = 0;
@@ -84,8 +107,8 @@ const Charge = {
     this.elapsed = Math.min(this.total, this.elapsed + dt);
   },
 
-  // 松开左键：按金色长方形数量合并伤害，交给武器补一次挥砍
-  end(player, monsters) {
+  // 松开左键：按金色长方形数量合并伤害，朝 angle 方向立即挥出
+  end(player, angle) {
     if (!this.holding) return;
 
     const n = this.goldCount();
@@ -99,13 +122,12 @@ const Charge = {
     // 一个金色长方形都没有：本次不攻击（不挥砍、不造成伤害），武器恢复正常状态机
     if (n <= 0) return;
 
-    // 有目标就挥出合并攻击；没有可攻击目标时攻击判定不会生效，
-    // 蓄力值作废且本次攻击间隔视为 0（武器立即可以再次攻击）
-    if (!Weapon.startChargedAttack(player, monsters, n)) Weapon.readyNow();
+    // 打空也算挥出：方向由玩家（鼠标）决定，不再因为范围内无目标而作废蓄力
+    Weapon.startChargedAttack(player, angle, n);
   },
 
   draw(ctx, player) {
-    if (!this.holding || this.rectTimes.length === 0) return;
+    if (!this.enabled() || !this.holding || this.rectTimes.length === 0) return;
 
     const w = this.BAR_WIDTH;
     const h = this.BAR_HEIGHT;
@@ -153,6 +175,29 @@ const Charge = {
       }
     }
 
+    // 蓄力条右侧显示该武器图标
+    const src = this.bars[0] && this.bars[0].entry && this.bars[0].entry.icon;
+    if (src) {
+      const img = this.iconImage(src);
+      if (img && img.complete && img.naturalWidth > 0) {
+        const x0 = player.x - w / 2;
+        const y0 = player.y - player.r - this.BAR_LIFT - this.RECT_HEIGHT - this.RECT_LIFT;
+        const size = this.ICON_SIZE;
+        ctx.drawImage(img, x0 + w + this.ICON_GAP, y0 + h / 2 - size / 2, size, size);
+      }
+    }
+
     ctx.restore();
+  },
+
+  iconImage(src) {
+    if (!this.iconCache) this.iconCache = {};
+    let img = this.iconCache[src];
+    if (!img) {
+      img = new Image();
+      img.src = src;
+      this.iconCache[src] = img;
+    }
+    return img;
   }
 };

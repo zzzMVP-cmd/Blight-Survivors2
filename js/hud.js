@@ -13,6 +13,8 @@ const HUD = {
   waveText: null,
   weaponBar: null,
   itemBar: null,
+  weaponSlots: null,
+  chargeWeapons: null,
 
   // 上一次写入 DOM 的值，只有变化时才写，避免每帧 7 次 DOM 写入触发重排
   cache: null,
@@ -50,18 +52,51 @@ const HUD = {
     this.cache = {};
   },
 
-  // 按获得顺序设置武器栏
+  // 按「可蓄力优先、其余按获得顺序」设置武器栏
   setWeapons(weapons) {
     if (!this.weaponBar) return;
     this.weaponBar.innerHTML = '';
-    (weapons || []).forEach((w) => {
+    this.weaponSlots = [];
+    this.chargeWeapons = [];
+
+    const ordered = this.orderedWeapons(weapons);
+    this.chargeWeapons = ordered.filter((w) => w.canCharge);
+
+    ordered.forEach((w) => {
       const slot = document.createElement('div');
       slot.className = 'weapon-slot';
-      slot.innerHTML =
-        '<img src="' + w.icon + '" alt="' + w.name + '">' +
-        '<span>' + w.name + '</span>';
+      if (w.canCharge) {
+        slot.classList.add(w.chargeEnabled === false ? 'charge-off' : 'charge-on');
+      }
+      let html = '<img src="' + w.icon + '" alt="' + w.name + '">';
+      if (w.canCharge) {
+        html += '<span class="weapon-key">' + (this.chargeWeapons.indexOf(w) + 1) + '</span>';
+      }
+      html += '<span class="weapon-name">' + w.name + '</span>';
+      slot.innerHTML = html;
+      this.weaponSlots.push({ el: slot, weapon: w });
       this.weaponBar.appendChild(slot);
     });
+  },
+
+  // 可蓄力武器排在前面，其余按获取顺序（sort 为稳定排序，保持获得顺序）
+  orderedWeapons(weapons) {
+    return (weapons || []).slice().sort((a, b) => {
+      const ca = a.canCharge ? 0 : 1;
+      const cb = b.canCharge ? 0 : 1;
+      return ca - cb;
+    });
+  },
+
+  // 只刷新蓄力开关的边框状态，不重建整个武器栏
+  updateWeaponCharge() {
+    if (!this.weaponSlots) return;
+    for (const s of this.weaponSlots) {
+      if (!s.weapon.canCharge) continue;
+      const on = s.weapon.chargeEnabled !== false;
+      s.el.classList.toggle('charge-on', on);
+      s.el.classList.toggle('charge-off', !on);
+    }
   },
 
   // 更新血条、等级、经验条（只在数值变化时写入 DOM）
