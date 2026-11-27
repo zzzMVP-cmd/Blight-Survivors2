@@ -25,6 +25,7 @@
   - **新增 GitHub Actions 云端出包**：`.github/workflows/build-mac.yml`，手动触发，在 `macos-latest` 上跑 `npm ci` + `npm run dist:mac`，把 dmg 与 zip 作为 artifact 上传，没有 Mac 也能拿到安装包。
   - **修复云端打包失败**：CI 环境下 electron-builder 默认会尝试把产物发布到 GitHub Release，缺 `GH_TOKEN` 时在 dmg / zip 生成完毕后报 `GitHub Personal Access Token is not set` 并以 exit 1 退出。`dist:mac` 改为 `electron-builder --mac --publish never`，只出包不发布；`dist` 同步改为 `electron-builder --win --publish never`（终端预设 `CI=true` 时本地打包会踩到同一个坑）。
   - **构建日志自动留档**：打包步骤加 `set -o pipefail` + `tee build.log`，失败时通过 `if: failure()` 把 `build.log` 作为 `build-log` artifact 上传，便于定位问题。
+  - **dmg 自动发布到 Release**：新增 `softprops/action-gh-release@v2` 步骤，把 `*.dmg` 上传到 tag `Blight-Survivors2-v${version}`（tag 由 `package.json` 版本号动态拼出），配 `permissions: contents: write` 与自动注入的 `GITHUB_TOKEN`。原因是 Actions Artifacts 的下载接口强制登录（匿名 `401`）、按 run 绑定且 90 天过期，无法走镜像代理；而 Release 附件匿名可下、永久保留，能被 `ghfast.top` / `gh-proxy.com` 等代理站代理。实测本机直连 Release 下载返回 502，经代理 710 KB/s 正常。
 
 ### 调整
 - **画布改为按设备像素比渲染（DPR 上限 2）**：画布物理像素 = CSS 像素 × `min(devicePixelRatio, 2)`，绘制统一用 `setTransform` 放大，所有逻辑与输入坐标仍用 CSS 像素，手机上文字与图标不再发糊。

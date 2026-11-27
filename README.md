@@ -245,11 +245,39 @@ npm run dist      # 或直接双击 pack.bat
 
 1. 把仓库推到 GitHub（remote 已配好 `zzzMVP-cmd/Blight-Survivors2`）。
 2. 打开仓库的 **Actions** 标签页，左侧选「构建 macOS 安装包」，点右侧 **Run workflow** → 再点 **Run workflow**。
-3. 等 5~10 分钟。跑完后点进这次运行记录，页面底部 **Artifacts** 区下载 `BlightSurvivors2-mac-universal`。
-4. 解压得到：
+3. 等 5~10 分钟。跑完后有两个地方能拿到产物：
+
+   - **Release**（推荐）：`https://github.com/zzzMVP-cmd/Blight-Survivors2/releases/tag/Blight-Survivors2-v0.7.2`，`BlightSurvivors2_mac_v0.7.2_universal.dmg` 作为附件挂在和 apk / exe 同一个 tag 下
+   - **Artifacts**：这次运行记录页面底部，`BlightSurvivors2-mac-universal`（dmg + zip 打包，约 337 MB）
+
+4. 产物说明：
 
    - `BlightSurvivors2_mac_v0.7.2_universal.dmg` —— 约 150 MB，拖进「应用程序」即可
-   - `BlightSurvivors2_mac_v0.7.2_universal.zip` —— 免安装包，解压出 `.app`
+   - `BlightSurvivors2_mac_v0.7.2_universal.zip` —— 免安装包，解压出 `.app`，仅存在于 Artifacts 里
+
+#### 为什么 dmg 要额外传一份到 Release
+
+Actions 的 **Artifacts 无法走镜像 / 代理站**：下载接口 `/actions/artifacts/{id}/zip` 强制要求登录（匿名访问返回 `401`），URL 按 run 绑定且 90 天后过期，`ghproxy` 之类的代理站也不认这个路径。
+
+而 **Release 附件是匿名的、永久保留的，且能被代理站代理**。实测本机直连 `github.com/.../releases/download/...` 直接 502 失败，经代理才通：
+
+```bash
+# 直连：http=502，76 字节，0.13 秒断开
+curl -L -r 0-8388607 https://github.com/zzzMVP-cmd/Blight-Survivors2/releases/download/Blight-Survivors2-v0.7.2/BlightSurvivors2_Setup_v0.7.2.exe
+
+# 经 ghfast.top：http=206，8 MB / 11.8 秒 ≈ 710 KB/s，稳定
+curl -L -r 0-8388607 https://ghfast.top/https://github.com/zzzMVP-cmd/Blight-Survivors2/releases/download/Blight-Survivors2-v0.7.2/BlightSurvivors2_Setup_v0.7.2.exe
+```
+
+所以国内下载 dmg 用这个地址（代理前缀 + 原始 Release 地址）：
+
+```
+https://ghfast.top/https://github.com/zzzMVP-cmd/Blight-Survivors2/releases/download/Blight-Survivors2-v0.7.2/BlightSurvivors2_mac_v0.7.2_universal.dmg
+```
+
+备选代理（实测均可访问，速度因地区而异）：`gh-proxy.com`、`ghproxy.net`。
+
+工作流里对应的是 [softprops/action-gh-release@v2](https://github.com/softprops/action-gh-release)，`tag_name` 从 `package.json` 的 `version` 动态拼出（`Blight-Survivors2-v${version}`），只上传 `*.dmg`，`overwrite_files` 默认 true，重跑会覆盖同名附件。上传需要 `permissions: contents: write`，用的是 Actions 自动注入的 `GITHUB_TOKEN`，不用手工配 secret。
 
 免费额度：公开仓库的 Actions 时长不限；私有仓库按 macOS 倍率 10 倍计费（一次 5~10 分钟实耗记 50~100 分钟），每月 2000 分钟免费额度，够跑二十次左右。
 

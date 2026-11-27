@@ -3,6 +3,9 @@ name: 构建 macOS 安装包
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   mac-universal:
     runs-on: macos-latest
@@ -20,6 +23,12 @@ jobs:
 
       - name: 安装依赖
         run: npm ci
+
+      - name: 读取版本号
+        id: ver
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "tag=Blight-Survivors2-v${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: 打包 universal dmg 与 zip
         run: |
@@ -39,6 +48,13 @@ jobs:
             release/*.dmg
             release/*.zip
           if-no-files-found: error
+
+      - name: 发布 dmg 到 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          files: release/*.dmg
+          fail_on_unmatched_files: true
 
       - name: 上传构建日志
         if: failure()
