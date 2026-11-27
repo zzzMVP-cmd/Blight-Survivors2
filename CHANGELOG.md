@@ -21,6 +21,8 @@
   - **安卓返回键映射**：游戏中按返回 = 暂停，暂停页按返回 = 退到后台，不会误退出游戏。
   - **国内网络构建适配**：`gradle-wrapper.properties` 的 `distributionUrl` 改指华为云镜像（官方源实测 40 KB/s，镜像 10 MB/s）；`gradle.properties` 加 `android.overridePathCheck=true` 绕过 AGP 对中文路径的拦截；`local.properties` 用 `sdk.dir` 定位 SDK。实测首次构建 3 分钟出包，产物 `BlightSurvivors2_Android_v0.7.2.apk`（约 4 MB）。
 - **新增 macOS 构建配置**：`package.json` 的 `mac` 段配好 `dmg` + `zip` 目标（`identity: null` 不签名），在 Mac 上执行 `npm run dist:mac` 即可出包。
+  - **改为 universal 单包**：`arch` 固定为 `universal`，一个 dmg 同时含 x64 与 arm64，Intel 与 Apple Silicon 通吃，体积约 150 MB；产物名统一为 `BlightSurvivors2_mac_v${version}_universal.${ext}`。
+  - **新增 GitHub Actions 云端出包**：`.github/workflows/build-mac.yml`，手动触发，在 `macos-latest` 上跑 `npm ci` + `npm run dist:mac`，把 dmg 与 zip 作为 artifact 上传，没有 Mac 也能拿到安装包。
 
 ### 调整
 - **画布改为按设备像素比渲染（DPR 上限 2）**：画布物理像素 = CSS 像素 × `min(devicePixelRatio, 2)`，绘制统一用 `setTransform` 放大，所有逻辑与输入坐标仍用 CSS 像素，手机上文字与图标不再发糊。

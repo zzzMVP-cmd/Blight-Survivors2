@@ -35,7 +35,13 @@
 
 ### macOS
 
-仓库里已配好 `mac` 构建目标，但没有签名的 Mac 安装包无法在 Windows 上生成，**必须在一台 Mac 上执行构建**，见[构建 macOS 版](#构建-macos-版)。
+| 项目 | 说明 |
+|---|---|
+| 获取 | 用仓库自带的 GitHub Actions 在云端 macOS 机器出包，不用自己有 Mac，见[构建 macOS 版](#构建-macos-版) |
+| 产物 | `BlightSurvivors2_mac_v0.7.2_universal.dmg`（约 150 MB），Intel 与 Apple Silicon 通吃 |
+| 安装 | 打开 dmg，把 `Blight Survivors 2.app` 拖进「应用程序」 |
+| 首次打开 | 未签名 / 未公证，Gatekeeper 会拦。终端执行一次 `xattr -cr /Applications/Blight\ Survivors\ 2.app`，或右键 → 打开 → 仍要打开 |
+| 系统要求 | macOS 11.0 及以上（universal 二进制的最低要求） |
 
 ---
 
@@ -215,23 +221,57 @@ npm run dist      # 或直接双击 pack.bat
 
 ### 构建 macOS 版
 
-**必须在 macOS 上执行**：`.dmg` 的生成依赖 macOS 自带的 `hdiutil`，Windows / Linux 上无法交叉编译。`package.json` 里的 `mac` 段已经配好（`dmg` + `zip`、`category: games`、`identity: null` 表示不签名）。
+**必须在一台 macOS 上执行**：`.dmg` 依赖 macOS 自带的 `hdiutil`，而 electron-builder 在 Windows 上会直接抛错 `Build for macOS is supported only on macOS`（`app-builder-lib/out/packager.js` 里的硬拦截，连 `zip` 也不放行），无法交叉编译。
+
+不用自己有 Mac —— 仓库里已经放了 GitHub Actions 工作流，云端出包即可。
+
+`package.json` 的 `mac` 段已配成 **universal（Intel + Apple Silicon 通吃）**：
+
+```json
+"mac": {
+  "target": [
+    { "target": "dmg", "arch": ["universal"] },
+    { "target": "zip", "arch": ["universal"] }
+  ],
+  "category": "public.app-category.games",
+  "identity": null,
+  "artifactName": "BlightSurvivors2_mac_v${version}_universal.${ext}"
+}
+```
+
+#### 路线 A：GitHub Actions 云端构建（推荐，不用 Mac）
+
+工作流文件 [.github/workflows/build-mac.yml](.github/workflows/build-mac.yml)，只能手动触发（`workflow_dispatch`）。
+
+1. 把仓库推到 GitHub（remote 已配好 `zzzMVP-cmd/Blight-Survivors2`）。
+2. 打开仓库的 **Actions** 标签页，左侧选「构建 macOS 安装包」，点右侧 **Run workflow** → 再点 **Run workflow**。
+3. 等 5~10 分钟。跑完后点进这次运行记录，页面底部 **Artifacts** 区下载 `BlightSurvivors2-mac-universal`。
+4. 解压得到：
+
+   - `BlightSurvivors2_mac_v0.7.2_universal.dmg` —— 约 150 MB，拖进「应用程序」即可
+   - `BlightSurvivors2_mac_v0.7.2_universal.zip` —— 免安装包，解压出 `.app`
+
+免费额度：公开仓库的 Actions 时长不限；私有仓库按 macOS 倍率 10 倍计费（一次 5~10 分钟实耗记 50~100 分钟），每月 2000 分钟免费额度，够跑二十次左右。
+
+工作流跑在 `macos-latest`（Apple Silicon）。universal 包由 electron-builder 先各打一份 x64 与 arm64，再用 `@electron/universal` 合并成一个二进制。万一某次 runner 镜像调整导致合并失败，把 `runs-on` 改成 `macos-15-intel` 重跑即可。
+
+#### 路线 B：本地 Mac 构建
+
+手上有 Mac 时，一条命令即可：
 
 ```bash
 npm install
 npm run dist:mac       # 等价于 electron-builder --mac
 ```
 
-产物在 `release\`（Mac 上为 `release/`）：
+产物在 `release/`，文件名同上（universal）。Mac 上同样**不需要** Apple Developer 账号，`identity: null` 已关掉签名。
 
-- `BlightSurvivors2-0.7.2.dmg` —— 拖进「应用程序」即可
-- `BlightSurvivors2-0.7.2-mac.zip` —— 免安装包
+#### macOS 打包的注意事项
 
-两点注意：
-
-- **未签名 / 未公证**：用户首次打开会被 Gatekeeper 拦下，提示「已损坏，无法打开」。让对方在终端执行一次 `xattr -cr /Applications/Blight\ Survivors\ 2.app` 即可解除，或右键 → 打开 → 仍要打开。
-- **架构**：默认按当前机器架构出包（Intel 出 x64、Apple Silicon 出 arm64）。想一个包通吃，把 `mac.target` 改成 `"universal"`，体积约翻倍。
+- **未签名 / 未公证**：用户首次打开会被 Gatekeeper 拦下，提示「已损坏，无法打开」或「无法验证开发者」。让对方在终端执行一次 `xattr -cr /Applications/Blight\ Survivors\ 2.app` 即可解除，或右键 → 打开 → 仍要打开。
+- **架构**：已固定为 `universal`，一个包同时含 x64 与 arm64，体积约是单架构的两倍（约 150 MB），换来的好处是用户不用挑机型。
 - **正式分发**：需要 Apple Developer 账号（99 美元/年）配置 `identity` 与 `notarize`，否则只能自用或让用户手动解除隔离。
+- **`author` 字段缺失**：`npm run dist:mac` 会打一条 `author is missed in the package.json` 警告，不影响出包（dmg 里不会写作者信息）；想让产物元数据完整，在 `package.json` 里补一行 `"author": "你的名字"` 即可。
 
 ### 构建安卓版
 

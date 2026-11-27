@@ -48,11 +48,22 @@
     },
     "mac": {
       "target": [
-        "dmg",
-        "zip"
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "universal"
+          ]
+        }
       ],
       "category": "public.app-category.games",
-      "identity": null
+      "identity": null,
+      "artifactName": "BlightSurvivors2_mac_v${version}_universal.${ext}"
     },
     "nsis": {
       "oneClick": false,
