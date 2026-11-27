@@ -255,13 +255,23 @@ npm run dist      # 或直接双击 pack.bat
 
 工作流跑在 `macos-latest`（Apple Silicon）。universal 包由 electron-builder 先各打一份 x64 与 arm64，再用 `@electron/universal` 合并成一个二进制。万一某次 runner 镜像调整导致合并失败，把 `runs-on` 改成 `macos-15-intel` 重跑即可。
 
+**关于 `--publish never`（重要）**：`dist` 与 `dist:mac` 脚本里都带了 `--publish never`，必须保留。electron-builder 检测到 CI 环境（`CI=true`）后会尝试把产物发布到 GitHub Release，发布需要 `GH_TOKEN`，没配就直接报错退出：
+
+```
+⨯ GitHub Personal Access Token is not set, neither programmatically, nor using env "GH_TOKEN"
+```
+
+这个报错发生在 dmg / zip / exe **已经生成之后**，属于「包打好了、发布失败」。我们只需要 Actions 的 artifact 上传（本地则只需要文件本身），不需要发布到 Release，所以用 `--publish never` 关掉。注意某些终端或 IDE 会预设 `CI=true`，本地打包同样会踩到这个问题，加了这个参数就一并免疫。
+
+**构建日志自动留档**：打包步骤用 `set -o pipefail` + `tee build.log`，失败时（`if: failure()`）会把 `build.log` 作为名为 `build-log` 的 artifact 上传。若某次运行红了，先下载这个 artifact 看完整日志，比翻网页折叠日志快得多。
+
 #### 路线 B：本地 Mac 构建
 
 手上有 Mac 时，一条命令即可：
 
 ```bash
 npm install
-npm run dist:mac       # 等价于 electron-builder --mac
+npm run dist:mac       # 等价于 electron-builder --mac --publish never
 ```
 
 产物在 `release/`，文件名同上（universal）。Mac 上同样**不需要** Apple Developer 账号，`identity: null` 已关掉签名。

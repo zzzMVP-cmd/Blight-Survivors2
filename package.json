@@ -8,8 +8,8 @@
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win",
-    "dist:mac": "electron-builder --mac",
+    "dist": "electron-builder --win --publish never",
+    "dist:mac": "electron-builder --mac --publish never",
     "www": "node scripts/build-www.js",
     "android:sync": "npm run www && cap sync android",
     "android:open": "npm run android:sync && cap open android",

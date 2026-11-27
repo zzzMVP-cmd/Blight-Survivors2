@@ -23,6 +23,8 @@
 - **新增 macOS 构建配置**：`package.json` 的 `mac` 段配好 `dmg` + `zip` 目标（`identity: null` 不签名），在 Mac 上执行 `npm run dist:mac` 即可出包。
   - **改为 universal 单包**：`arch` 固定为 `universal`，一个 dmg 同时含 x64 与 arm64，Intel 与 Apple Silicon 通吃，体积约 150 MB；产物名统一为 `BlightSurvivors2_mac_v${version}_universal.${ext}`。
   - **新增 GitHub Actions 云端出包**：`.github/workflows/build-mac.yml`，手动触发，在 `macos-latest` 上跑 `npm ci` + `npm run dist:mac`，把 dmg 与 zip 作为 artifact 上传，没有 Mac 也能拿到安装包。
+  - **修复云端打包失败**：CI 环境下 electron-builder 默认会尝试把产物发布到 GitHub Release，缺 `GH_TOKEN` 时在 dmg / zip 生成完毕后报 `GitHub Personal Access Token is not set` 并以 exit 1 退出。`dist:mac` 改为 `electron-builder --mac --publish never`，只出包不发布；`dist` 同步改为 `electron-builder --win --publish never`（终端预设 `CI=true` 时本地打包会踩到同一个坑）。
+  - **构建日志自动留档**：打包步骤加 `set -o pipefail` + `tee build.log`，失败时通过 `if: failure()` 把 `build.log` 作为 `build-log` artifact 上传，便于定位问题。
 
 ### 调整
 - **画布改为按设备像素比渲染（DPR 上限 2）**：画布物理像素 = CSS 像素 × `min(devicePixelRatio, 2)`，绘制统一用 `setTransform` 放大，所有逻辑与输入坐标仍用 CSS 像素，手机上文字与图标不再发糊。
