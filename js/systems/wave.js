@@ -1,7 +1,8 @@
 'use strict';
 
 // 波次管理：3s 准备 → 第一波；两波间隔 15s；清场后 1s 提前下一波。
-// 第 40 波是关键节点：数量、血量、伤害均为上波的 1.2 倍（四舍五入）。
+// 第 40 波是关键节点：数量、血量、伤害均为上波的 1.2 倍。
+// 数量按小数累积、入队时向上取整；血量与伤害四舍五入。
 // 40 波之后数量不再增长，血量与伤害改为每波 1.44 倍（相当于原本「数量 × 血量」的合并增幅）。
 // 同屏存活怪物上限 MAX_ALIVE：超出部分进 spawnQueue 排队，每死一只补刷一只，
 // 直到队列清空才判定本波清场（排队数跨波累积，不会丢弃，经验总量不减少）。
@@ -30,9 +31,11 @@ const Wave = {
   SCALE: 1.2,
   LATE_SCALE: 1.44,
   KEY_WAVE_STEP: 40,
-  MAX_ALIVE: 250,
+  MAX_ALIVE: 400,
 
-  BASE_COUNT: 3,
+  // 初始数量 2.1：小数部分跨波累积，只在入队时向上取整，
+  // 避免每波都四舍五入造成的累积膨胀（第 40 波由 3973 降到约 2575）。
+  BASE_COUNT: 2.1,
   BASE_HP: 30,
   BASE_DAMAGE: 10,
 
@@ -106,7 +109,8 @@ const Wave = {
 
     if (this.wave > 1) {
       if (this.wave <= this.KEY_WAVE_STEP) {
-        this.waveCount = Math.round(this.waveCount * this.SCALE);
+        // 数量保持小数累积，入队时才向上取整
+        this.waveCount = this.waveCount * this.SCALE;
         this.waveHp = Math.round(this.waveHp * this.SCALE);
         this.waveDamage = Math.round(this.waveDamage * this.SCALE);
       } else {
@@ -121,7 +125,7 @@ const Wave = {
       wave: this.wave,
       hp: this.waveHp,
       damage: this.waveDamage,
-      count: this.waveCount
+      count: Math.ceil(this.waveCount)
     });
     this.fillField();
   },

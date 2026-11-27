@@ -53,6 +53,37 @@ const Monsters = {
     return i > 3 ? 3 : i;
   },
 
+  // 护盾环精灵缓存：环半径只由波次决定（40 波封顶后固定），透明度只有 4 档，
+  // 因此按「半径整数 + 透明度档」缓存一张离屏小画布，绘制时退化为 drawImage。
+  // 之前每只怪每帧都要把 arc 塞进同一条 path 再 stroke，250 只时该项占 15ms/帧。
+  _ringCache: new Map(),
+
+  ringSprite(radius, level) {
+    const key = radius + ':' + level;
+    const cached = this._ringCache.get(key);
+    if (cached) return cached;
+
+    const gap = 0.7;
+    const start = Math.PI / 2 + gap;
+    const end = Math.PI / 2 - gap + Math.PI * 2;
+    const pad = 3;
+    const size = Math.ceil((radius + pad) * 2);
+
+    const spr = document.createElement('canvas');
+    spr.width = size;
+    spr.height = size;
+    const g = spr.getContext('2d');
+    g.strokeStyle = this.SHIELD_STROKE;
+    g.lineWidth = 3;
+    g.globalAlpha = this.SHIELD_ALPHA[level];
+    g.beginPath();
+    g.arc(size / 2, size / 2, radius, start, end);
+    g.stroke();
+
+    this._ringCache.set(key, spr);
+    return spr;
+  },
+
   // 护盾环：白偏色细圈，下部留缺口显示护盾值，护盾越少越透明；护盾为 0 时整环不绘制。
   // 需在绘制怪物本体之前调用（环在体外，先画环不影响本体层次）。
   drawShieldRings(ctx, list) {
@@ -70,27 +101,14 @@ const Monsters = {
     }
     if (total === 0) return;
 
-    const gap = 0.7;
-    const start = Math.PI / 2 + gap;
-    const end = Math.PI / 2 - gap + Math.PI * 2;
-    const cosStart = Math.cos(start);
-    const sinStart = Math.sin(start);
-
-    ctx.strokeStyle = this.SHIELD_STROKE;
-    ctx.lineWidth = 3;
     for (let i = 0; i < 4; i++) {
       const g = groups[i];
-      if (g.length === 0) continue;
-      ctx.globalAlpha = this.SHIELD_ALPHA[i];
-      ctx.beginPath();
       for (const m of g) {
-        const r = m.radius + 5;
-        ctx.moveTo(m.x + r * cosStart, m.y + r * sinStart);
-        ctx.arc(m.x, m.y, r, start, end);
+        const spr = this.ringSprite(Math.round(m.radius) + 5, i);
+        const half = spr.width / 2;
+        ctx.drawImage(spr, m.x - half, m.y - half);
       }
-      ctx.stroke();
     }
-    ctx.globalAlpha = 1;
   },
 
   // 护盾值数字：字体与填充色每帧只设置一次，逐只只做一次 fillText（不再描边）

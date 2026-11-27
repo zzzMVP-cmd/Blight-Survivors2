@@ -28,8 +28,10 @@ const Weapon = {
   SWORD_LENGTH: 40,
   ATTACK_RANGE: 120,
   ATTACK_INTERVAL: 2,
-  AIM_DURATION: 0.12,
-  SWING_DURATION: 0.18,
+  // 瞄准 + 挥砍合计 0.20s = Upgrade.INTERVAL_CAP，保证攻速堆满后真实循环可达 0.2s。
+  // 二者之和必须 ≤ INTERVAL_CAP，否则冷却会被 Math.max(0, …) 截成 0，名义间隔永远达不到。
+  AIM_DURATION: 0.08,
+  SWING_DURATION: 0.12,
   ARC_DURATION: 0.25,
   DAMAGE: 25,
   SWING_ANGLE: Math.PI / 2,
