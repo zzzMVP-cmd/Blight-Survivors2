@@ -167,9 +167,11 @@ h1 {
   letter-spacing:1px;
 }
 
-/* 左下角武器栏 */
+/* 左下角武器栏（摇杆模式下保持在底部，摇杆排在它上方） */
 .weapon-bar {
-  position:absolute; left:18px; bottom:18px;
+  position:absolute;
+  left:calc(18px + env(safe-area-inset-left, 0px));
+  bottom:calc(18px + env(safe-area-inset-bottom, 0px));
   display:flex; flex-direction:row; gap:12px;
 }
 .weapon-slot {
@@ -204,10 +206,31 @@ h1 {
 }
 .weapon-name { font-size:11px; color:#cbb6ff; text-align:center; line-height:1.2; }
 
-/* 右侧道具栏（暂空占位） */
+/* 可点按的武器槽（可蓄力武器）：HUD 整层不接收事件，这里单独放开 */
+.weapon-slot.clickable { pointer-events:auto; cursor:pointer; }
+.weapon-slot.clickable:active { transform:scale(.96); }
+
+/* 右上角暂停按钮（触屏没有 ESC，靠它进暂停页） */
+.pause-btn {
+  position:absolute;
+  right:calc(18px + env(safe-area-inset-right, 0px));
+  top:calc(18px + env(safe-area-inset-top, 0px));
+  width:32px; height:32px;
+  padding:0; border-radius:50%;
+  pointer-events:auto; cursor:pointer;
+  font-size:11px; line-height:1; color:#e8e8f0;
+  background:rgba(14,14,24,.75);
+  border:2px solid #3a3a52;
+}
+.pause-btn:active { background:rgba(255,215,110,.25); }
+.pause-btn.hidden { display:none; }
+
+/* 右侧道具栏（暂空占位），顶部留出暂停按钮的位置 */
 .item-bar {
-  position:absolute; right:18px; top:18px;
-  bottom:18px;
+  position:absolute;
+  right:calc(18px + env(safe-area-inset-right, 0px));
+  top:calc(64px + env(safe-area-inset-top, 0px));
+  bottom:calc(18px + env(safe-area-inset-bottom, 0px));
   width:96px;
   border:2px dashed #3a3a52;
   border-radius:10px;
@@ -230,6 +253,13 @@ h1 {
 .btn.retreat:hover {
   background:linear-gradient(180deg,#6a6a7a,#4a4a58);
 }
+/* 操作模式切换按钮：与主按钮区分，用冷色 */
+.btn.mode {
+  background:linear-gradient(180deg,#6ea8ff,#3d6fd6);
+  color:#0a1020;
+  box-shadow:0 0 18px rgba(90,140,240,.35);
+}
+.btn.mode:hover { transform:translateY(-2px); }
 
 /* 升级强化页 */
 .upgrade-overlay { gap:16px; }

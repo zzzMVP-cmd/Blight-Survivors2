@@ -1,16 +1,24 @@
 {
   "name": "blight-survivors-2",
   "productName": "Blight Survivors 2",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "Blight Survivors 2 - 桌面版游戏",
   "license": "CC-BY-NC-SA-4.0",
   "private": true,
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win"
+    "dist": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "www": "node scripts/build-www.js",
+    "android:sync": "npm run www && cap sync android",
+    "android:open": "npm run android:sync && cap open android",
+    "android:apk": "npm run android:sync && cd android && gradlew.bat assembleDebug"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.6.3",
+    "@capacitor/cli": "^8.6.3",
+    "@capacitor/core": "^8.6.3",
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8"
   },
@@ -32,9 +40,19 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.games",
+      "identity": null
     },
     "nsis": {
       "oneClick": false,
@@ -47,5 +65,8 @@
       "deleteAppDataOnUninstall": false,
       "artifactName": "BlightSurvivors2_Setup_v${version}.exe"
     }
+  },
+  "dependencies": {
+    "@capacitor/app": "^8.1.2"
   }
 }

@@ -9,6 +9,7 @@ const Menu = {
   heroCards: [],
 
   pauseOverlay: null,
+  modeBtn: null,
 
   init() {
     this.overlay = document.createElement('div');
@@ -76,7 +77,19 @@ const Menu = {
     retreatBtn.addEventListener('click', () => Game.retreat());
     this.pauseOverlay.appendChild(retreatBtn);
 
+    // 操作模式切换：键盘 / 摇杆，选择写入 localStorage，下次启动沿用
+    this.modeBtn = document.createElement('button');
+    this.modeBtn.className = 'btn mode';
+    this.modeBtn.addEventListener('click', () => Game.toggleControlMode());
+    this.pauseOverlay.appendChild(this.modeBtn);
+    this.refreshControlMode();
+
     document.body.appendChild(this.pauseOverlay);
+  },
+
+  refreshControlMode() {
+    if (!this.modeBtn) return;
+    this.modeBtn.textContent = Game.controlMode === 'joystick' ? '操作模式：摇杆' : '操作模式：键盘';
   },
 
   hide() {

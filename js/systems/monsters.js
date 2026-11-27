@@ -59,7 +59,8 @@ const Monsters = {
   _ringCache: new Map(),
 
   ringSprite(radius, level) {
-    const key = radius + ':' + level;
+    const dpr = Game.dpr || 1;
+    const key = radius + ':' + level + ':' + dpr;
     const cached = this._ringCache.get(key);
     if (cached) return cached;
 
@@ -70,15 +71,18 @@ const Monsters = {
     const size = Math.ceil((radius + pad) * 2);
 
     const spr = document.createElement('canvas');
-    spr.width = size;
-    spr.height = size;
+    // 精灵按设备像素渲染，再按 CSS 像素尺寸绘制，高 DPR 下环不会发糊
+    spr.width = Math.ceil(size * dpr);
+    spr.height = Math.ceil(size * dpr);
     const g = spr.getContext('2d');
+    g.scale(dpr, dpr);
     g.strokeStyle = this.SHIELD_STROKE;
     g.lineWidth = 3;
     g.globalAlpha = this.SHIELD_ALPHA[level];
     g.beginPath();
     g.arc(size / 2, size / 2, radius, start, end);
     g.stroke();
+    spr.cssSize = size;
 
     this._ringCache.set(key, spr);
     return spr;
@@ -105,8 +109,8 @@ const Monsters = {
       const g = groups[i];
       for (const m of g) {
         const spr = this.ringSprite(Math.round(m.radius) + 5, i);
-        const half = spr.width / 2;
-        ctx.drawImage(spr, m.x - half, m.y - half);
+        const css = spr.cssSize;
+        ctx.drawImage(spr, m.x - css / 2, m.y - css / 2, css, css);
       }
     }
   },

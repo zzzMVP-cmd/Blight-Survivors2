@@ -15,6 +15,7 @@ const HUD = {
   itemBar: null,
   weaponSlots: null,
   chargeWeapons: null,
+  pauseBtn: null,
 
   // 上一次写入 DOM 的值，只有变化时才写，避免每帧 7 次 DOM 写入触发重排
   cache: null,
@@ -37,7 +38,8 @@ const HUD = {
         '<div class="wave-text"></div>' +
       '</div>' +
       '<div class="weapon-bar"></div>' +
-      '<div class="item-bar"></div>';
+      '<div class="item-bar"></div>' +
+      '<button class="pause-btn" id="pauseBtn" aria-label="暂停">❚❚</button>';
     document.body.appendChild(this.root);
     this.expFill = this.root.querySelector('.exp-fill');
     this.hpFill = this.root.querySelector('.hp-fill');
@@ -49,7 +51,22 @@ const HUD = {
     this.waveText = this.root.querySelector('.wave-text');
     this.weaponBar = this.root.querySelector('.weapon-bar');
     this.itemBar = this.root.querySelector('.item-bar');
+    this.pauseBtn = this.root.querySelector('#pauseBtn');
+    this.pauseBtn.addEventListener('click', () => {
+      if (Game.running && !Game.paused && !Upgrade.showing) Game.pause();
+    });
     this.cache = {};
+  },
+
+  // 摇杆模式下武器栏上移，把左下角让给摇杆
+  applyControlMode() {
+    if (!this.root) return;
+    this.root.classList.toggle('joystick-mode', Game.controlMode === 'joystick');
+  },
+
+  // 暂停页会盖住 HUD，暂停按钮跟着隐藏，避免重复触发
+  setPauseButton(visible) {
+    if (this.pauseBtn) this.pauseBtn.classList.toggle('hidden', !visible);
   },
 
   // 按「可蓄力优先、其余按获得顺序」设置武器栏
@@ -74,6 +91,12 @@ const HUD = {
       }
       html += '<span class="weapon-name">' + w.name + '</span>';
       slot.innerHTML = html;
+      if (w.canCharge) {
+        // 点图标 = 切换该武器蓄力开关（触屏与鼠标点都生效，等同快捷键）
+        const idx = this.chargeWeapons.indexOf(w);
+        slot.classList.add('clickable');
+        slot.addEventListener('click', () => Game.toggleWeaponCharge(idx));
+      }
       this.weaponSlots.push({ el: slot, weapon: w });
       this.weaponBar.appendChild(slot);
     });

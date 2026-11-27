@@ -8,6 +8,33 @@ dist/
 *.zip
 *.exe
 
+# 安卓（Capacitor）
+www/
+android/app/build/
+android/app/release/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+*.apk
+*.aab
+
+# 签名密钥（绝不入库）
+*.keystore
+*.jks
+
+# 临时调试文件
+_tmp_*
+
+# 日志与崩溃转储
+*.log
+*.hprof
+hs_err_pid*
+replay_pid*
+
 # 系统 / 编辑器
 Thumbs.db
 .DS_Store
+.idea/
+*.iml

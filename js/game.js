@@ -27,6 +27,22 @@ const Game = {
   // 鼠标位置（屏幕坐标），蓄力攻击朝向由它决定
   mouse: { x: 0, y: 0, valid: false },
 
+  // 画面尺寸（CSS 像素）与设备像素比。画布物理像素 = CSS 像素 × dpr，
+  // 所有绘制与输入坐标统一用 CSS 像素，draw 时用 setTransform 放大，手机上不再发糊。
+  viewW: 0,
+  viewH: 0,
+  dpr: 1,
+  MAX_DPR: 2,
+
+  // 操作模式：'keyboard'（键盘 + 鼠标）/ 'joystick'（触屏摇杆）
+  controlMode: 'keyboard',
+  CONTROL_KEY: 'bs2_control_mode',
+
+  // 触屏长按进入蓄力：按下后超过该时长才视为蓄力，短暂点按视为误触
+  LONG_PRESS: 0.3,
+  chargeTouchId: null,
+  chargeTimer: 0,
+
   init(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
@@ -78,14 +94,132 @@ const Game = {
       if (Upgrade.showing) { Charge.reset(); return; }
       Charge.end(this.player, this.mouseAngle());
     });
+
+    this.loadControlMode();
+    this.initTouch();
+  },
+
+  // 触屏设备默认摇杆，桌面默认键盘；玩家在暂停页手动切换后写入 localStorage 记住
+  loadControlMode() {
+    let saved = null;
+    try { saved = localStorage.getItem(this.CONTROL_KEY); } catch (err) { saved = null; }
+    if (saved === 'joystick' || saved === 'keyboard') {
+      this.controlMode = saved;
+      return;
+    }
+    this.controlMode = this.detectTouch() ? 'joystick' : 'keyboard';
+  },
+
+  // 触屏且主指针为粗指针（手指）才判为移动端，避免触屏笔记本被误判
+  detectTouch() {
+    const points = navigator.maxTouchPoints || 0;
+    if (points <= 0) return false;
+    return window.matchMedia('(pointer: coarse)').matches;
+  },
+
+  setControlMode(mode) {
+    this.controlMode = mode === 'joystick' ? 'joystick' : 'keyboard';
+    try { localStorage.setItem(this.CONTROL_KEY, this.controlMode); } catch (err) { /* 忽略隐私模式写入失败 */ }
+    this.resetTouch();
+    HUD.applyControlMode();
+    Menu.refreshControlMode();
+  },
+
+  toggleControlMode() {
+    this.setControlMode(this.controlMode === 'joystick' ? 'keyboard' : 'joystick');
+  },
+
+  // 触屏输入：
+  // 1. 摇杆模式下落点在摇杆内 → 交给摇杆控制移动；
+  // 2. 其余位置长按 300ms → 进入蓄力，方向跟随手指（等同鼠标方向），松手立即挥出；
+  // 3. 武器图标是 DOM 元素，点击由 HUD 自己处理，不会落到画布上。
+  initTouch() {
+    const canvas = this.canvas;
+    const canPlay = () => this.running && !this.paused && !Upgrade.showing;
+
+    canvas.addEventListener('touchstart', (e) => {
+      if (!canPlay()) return;
+      for (const t of e.changedTouches) {
+        const x = t.clientX;
+        const y = t.clientY;
+
+        if (this.controlMode === 'joystick' && !Joystick.active && Joystick.hitTest(x, y)) {
+          Joystick.start(t.identifier, x, y);
+          continue;
+        }
+
+        if (this.chargeTouchId !== null) continue;
+
+        this.chargeTouchId = t.identifier;
+        this.mouse.x = x;
+        this.mouse.y = y;
+        this.mouse.valid = true;
+        this.clearChargeTimer();
+        this.chargeTimer = window.setTimeout(() => {
+          this.chargeTimer = 0;
+          if (!canPlay() || this.chargeTouchId === null) return;
+          Charge.start();
+        }, this.LONG_PRESS * 1000);
+      }
+      e.preventDefault();
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+      for (const t of e.changedTouches) {
+        if (Joystick.move(t.identifier, t.clientX, t.clientY)) continue;
+        if (t.identifier !== this.chargeTouchId) continue;
+        // 蓄力方向持续跟随手指，手指大幅移动也不会取消蓄力
+        this.mouse.x = t.clientX;
+        this.mouse.y = t.clientY;
+        this.mouse.valid = true;
+      }
+      e.preventDefault();
+    }, { passive: false });
+
+    const onEnd = (e) => {
+      for (const t of e.changedTouches) {
+        if (Joystick.end(t.identifier)) continue;
+        if (t.identifier !== this.chargeTouchId) continue;
+
+        this.chargeTouchId = null;
+        this.clearChargeTimer();
+
+        // 和鼠标一致：暂停中松手不结算，恢复后才结算
+        if (!this.running || !Charge.holding) continue;
+        if (Upgrade.showing) { Charge.reset(); continue; }
+
+        this.mouse.x = t.clientX;
+        this.mouse.y = t.clientY;
+        this.mouse.valid = true;
+        Charge.end(this.player, this.mouseAngle());
+      }
+      e.preventDefault();
+    };
+
+    canvas.addEventListener('touchend', onEnd, { passive: false });
+    canvas.addEventListener('touchcancel', onEnd, { passive: false });
+  },
+
+  clearChargeTimer() {
+    if (this.chargeTimer) {
+      window.clearTimeout(this.chargeTimer);
+      this.chargeTimer = 0;
+    }
+  },
+
+  // 暂停 / 撤离 / 选卡时清掉所有触屏手势，避免残留的按下状态带回游戏
+  resetTouch() {
+    Joystick.reset();
+    this.chargeTouchId = null;
+    this.clearChargeTimer();
   },
 
   // 鼠标指向的世界方向（相机恒定把玩家放在画面正中，缩放对角度无影响）
   mouseAngle() {
     if (!this.mouse.valid || !this.canvas) return Weapon.moveAngle;
     return Math.atan2(
-      this.mouse.y - this.canvas.height / 2,
-      this.mouse.x - this.canvas.width / 2
+      this.mouse.y - this.viewH / 2,
+      this.mouse.x - this.viewW / 2
     );
   },
 
@@ -161,6 +295,7 @@ const Game = {
     Shield.refresh(this.player);
     Menu.hide();
     HUD.build();
+    HUD.applyControlMode();
     HUD.setWeapons(this.player.weapons);
     Charge.bind(this.player.weapons);
     HUD.update(this.player);
@@ -212,10 +347,19 @@ const Game = {
 
   updatePlayer(dt) {
     let dx = 0, dy = 0;
-    if (this.keys['KeyW'] || this.keys['ArrowUp']) dy -= 1;
-    if (this.keys['KeyS'] || this.keys['ArrowDown']) dy += 1;
-    if (this.keys['KeyA'] || this.keys['ArrowLeft']) dx -= 1;
-    if (this.keys['KeyD'] || this.keys['ArrowRight']) dx += 1;
+
+    if (this.controlMode === 'joystick') {
+      // 摇杆：方向取自摇杆，速度固定为英雄当前移速（推程不影响速度）
+      if (Joystick.moving) {
+        dx = Joystick.dx;
+        dy = Joystick.dy;
+      }
+    } else {
+      if (this.keys['KeyW'] || this.keys['ArrowUp']) dy -= 1;
+      if (this.keys['KeyS'] || this.keys['ArrowDown']) dy += 1;
+      if (this.keys['KeyA'] || this.keys['ArrowLeft']) dx -= 1;
+      if (this.keys['KeyD'] || this.keys['ArrowRight']) dx += 1;
+    }
 
     if (dx !== 0 || dy !== 0) {
       const len = Math.hypot(dx, dy);
@@ -243,6 +387,8 @@ const Game = {
 
   pause() {
     this.paused = true;
+    this.resetTouch();
+    HUD.setPauseButton(false);
     Menu.showPause();
   },
 
@@ -250,12 +396,15 @@ const Game = {
     this.paused = false;
     this.accumulator = 0;
     this.lastTime = performance.now();
+    this.resetTouch();
+    HUD.setPauseButton(true);
     Menu.hidePause();
   },
 
   retreat() {
     this.running = false;
     this.paused = false;
+    this.resetTouch();
     Charge.reset();
     Menu.hidePause();
     HUD.hide();
@@ -264,6 +413,7 @@ const Game = {
 
   pauseForUpgrade() {
     this.paused = true;
+    this.resetTouch();
     Charge.reset();
   },
 
@@ -289,8 +439,8 @@ const Game = {
 
     const px = this.player.x;
     const py = this.player.y;
-    const hw = this.canvas.width / (2 * this.zoom);
-    const hh = this.canvas.height / (2 * this.zoom);
+    const hw = this.viewW / (2 * this.zoom);
+    const hh = this.viewH / (2 * this.zoom);
 
     const order = [];
     for (const m of list) {
@@ -309,8 +459,11 @@ const Game = {
 
   draw() {
     const ctx = this.ctx;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const w = this.viewW;
+    const h = this.viewH;
+
+    // 画布按物理像素分配，这里统一放大 dpr：之后所有绘制都用 CSS 像素坐标
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
 
     ctx.fillStyle = '#0a0a12';
     ctx.fillRect(0, 0, w, h);
@@ -352,6 +505,11 @@ const Game = {
     DamageNumbers.draw(ctx);
 
     ctx.restore();
+
+    // 摇杆画在屏幕坐标（不随缩放变化），暂停时一起静止
+    if (this.controlMode === 'joystick' && this.running && !this.paused) {
+      Joystick.draw(ctx);
+    }
 
     if (this.hitFlashTime > 0) {
       const alpha = Math.min(1, this.hitFlashTime / 0.15) * 0.45;
